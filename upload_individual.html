@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Individual Record</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css">
+  <style>
+    .container { max-width: 700px; margin: 50px auto; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    select, input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid #ddd; }
+    button { background: #003366; color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; }
+    .form-group { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a href="/admin" style="color:#003366;">← Back to Dashboard</a>
+  <h1 style="text-align:center; color:#003366;">Add Individual Record</h1>
+
+  <label>Select Ministry</label>
+  <select id="ministry" onchange="showForm()">
+    <option value="">-- Choose Ministry --</option>
+    <option value="campus">BLW Campus Ministry</option>
+    <option value="church">Christ Embassy Church Ministry</option>
+  </select>
+
+  <!-- Campus Form -->
+  <div id="campus-form" class="form-group">
+    <input type="text" placeholder="Region" id="c-region">
+    <input type="text" placeholder="Designation" id="c-designation">
+    <input type="text" placeholder="Name" id="c-name" required>
+    <input type="text" placeholder="KC ID" id="c-kcid">
+    <input type="text" placeholder="BLW Zone" id="c-zone">
+    <input type="text" placeholder="Group Name" id="c-group">
+    <input type="text" placeholder="Chapter" id="c-chapter">
+    <button onclick="addRecord('campus')">Add Campus Record</button>
+  </div>
+
+  <!-- Church Form -->
+  <div id="church-form" class="form-group">
+    <input type="text" placeholder="Region" id="h-region">
+    <input type="text" placeholder="DSP" id="h-dsp">
+    <input type="text" placeholder="Zone" id="h-zone">
+    <input type="text" placeholder="Virtual Zone" id="h-virtual">
+    <input type="text" placeholder="Group" id="h-group">
+    <input type="text" placeholder="Sub Group" id="h-subgroup">
+    <input type="text" placeholder="Church/Zone" id="h-churchzone">
+    <input type="text" placeholder="Reg Sub" id="h-regsub">
+    <input type="text" placeholder="Designation" id="h-designation">
+    <input type="text" placeholder="Name" id="h-name" required>
+    <input type="text" placeholder="KC ID" id="h-kcid">
+    <button onclick="addRecord('church')">Add Church Record</button>
+  </div>
+
+  <div id="result" style="margin-top:30px; text-align:center; font-weight:bold;"></div>
+</div>
+
+<script>
+  function showForm() {
+    const ministry = document.getElementById('ministry').value;
+    document.getElementById('campus-form').style.display = ministry === 'campus' ? 'block' : 'none';
+    document.getElementById('church-form').style.display = ministry === 'church' ? 'block' : 'none';
+  }
+
+  async function addRecord(ministry) {
+    const prefix = ministry === 'campus' ? 'c' : 'h';
+    const name = document.getElementById(prefix + '-name').value.trim();
+    if (!name) return alert("Name is required");
+
+    const data = { ministry, name };
+    if (ministry === 'campus') {
+      data.region = document.getElementById('c-region').value;
+      data.designation = document.getElementById('c-designation').value;
+      data.kc_id = document.getElementById('c-kcid').value;
+      data.blw_zone = document.getElementById('c-zone').value;
+      data.group_name = document.getElementById('c-group').value;
+      data.chapter = document.getElementById('c-chapter').value;
+    } else {
+      data.region = document.getElementById('h-region').value;
+      data.dsp = document.getElementById('h-dsp').value;
+      data.zone = document.getElementById('h-zone').value;
+      data.virtual_zone = document.getElementById('h-virtual').value;
+      data.group_name = document.getElementById('h-group').value;
+      data.sub_group = document.getElementById('h-subgroup').value;
+      data.church_zone = document.getElementById('h-churchzone').value;
+      data.reg_sub = document.getElementById('h-regsub').value;
+      data.designation = document.getElementById('h-designation').value;
+      data.kc_id = document.getElementById('h-kcid').value;
+    }
+
+    const res = await fetch('/api/add-record', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    document.getElementById('result').innerHTML = result.success
+      ? '<span style="color:green;">Record added successfully!</span>'
+      : '<span style="color:red;">Error: ' + result.error + '</span>';
+  }
+</script>
+</body>
+</html>
