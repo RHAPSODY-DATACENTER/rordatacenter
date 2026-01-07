@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GPD Admin Dashboard</title>
+  <link rel="stylesheet" href="css_file/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .dashboard-container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+    .stat-number { font-size: 2.5rem; font-weight: bold; color: #003366; }
+    .stat-label { color: #666; font-size: 1.1rem; }
+    .chart-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    .back { color: #003366; text-decoration: none; font-weight: bold; margin-bottom: 20px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <a href="/logout" class="back">Logout</a>
+    <h1 style="text-align:center; color:#003366;">GPD Admin Dashboard</h1>
+
+    <div class="stats-grid" id="stats"></div>
+
+    <div class="chart-container">
+      <h3>Records by Region</h3>
+      <canvas id="regionChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Records by BLW Zone</h3>
+      <canvas id="zoneChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>Top Designations</h3>
+      <canvas id="designationChart"></canvas>
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+      <a href="upload_dataset.html" class="btn">Upload Dataset</a>
+      <a href="upload_individual.html" class="btn">Add Individual Record</a>
+      <a href="upload_image.html" class="btn">Upload Photo</a>
+    </div>
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const res = await fetch('/api/dashboard-data');
+      const data = await res.json();
+
+      // Stats cards
+      const statsDiv = document.getElementById('stats');
+      statsDiv.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-number">${data.total_records}</div>
+          <div class="stat-label">Total Records</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${data.unique_regions}</div>
+          <div class="stat-label">Regions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${data.unique_zones}</div>
+          <div class="stat-label">BLW Zones</div>
+        </div>
+      `;
+
+      // Region chart
+      new Chart(document.getElementById('regionChart'), {
+        type: 'bar',
+        data: {
+          labels: data.regions.map(r => r.region || 'Unknown'),
+          datasets: [{
+            label: 'Number of records',
+            data: data.regions.map(r => r.count),
+            backgroundColor: '#003366'
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+      });
+
+      // Zone chart
+      new Chart(document.getElementById('zoneChart'), {
+        type: 'doughnut',
+        data: {
+          labels: data.zones.map(z => z.zone || 'Unknown'),
+          datasets: [{
+            data: data.zones.map(z => z.count),
+            backgroundColor: ['#003366', '#0066cc', '#3399ff', '#66ccff', '#99ddff']
+          }]
+        }
+      });
+
+      // Designation chart
+      new Chart(document.getElementById('designationChart'), {
+        type: 'bar',
+        data: {
+          labels: data.designations.map(d => d.designation || 'Unknown'),
+          datasets: [{
+            label: 'Count',
+            data: data.designations.map(d => d.count),
+            backgroundColor: '#0066cc'
+          }]
+        },
+        options: { indexAxis: 'y' }
+      });
+    }
+
+    window.onload = loadDashboard;
+  </script>
+</body>
+</html>

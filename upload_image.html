@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Photos</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css">
+  <style>
+    .container { max-width: 700px; margin: 50px auto; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    select, input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; }
+    button { background: #003366; color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; }
+    .preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+    .preview img { width: 100%; border-radius: 12px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <a href="/admin" style="color:#003366;">← Back to Dashboard</a>
+  <h1 style="text-align:center; color:#003366;">Upload Up to 4 Photos</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label>Select Ministry</label>
+    <select name="ministry" required>
+      <option value="campus">BLW Campus Ministry</option>
+      <option value="church">Christ Embassy Church Ministry</option>
+    </select>
+
+    <label>Full Name (Exact Match)</label>
+    <input type="text" name="name" required>
+
+    <label>Choose up to 4 images</label>
+    <input type="file" name="images" accept="image/*" multiple required>
+
+    <div id="preview" class="preview"></div>
+
+    <button type="submit">Upload Photos</button>
+  </form>
+
+  <div id="result" style="margin-top:30px; text-align:center; font-weight:bold;"></div>
+</div>
+
+<script>
+  document.querySelector('input[type=file]').onchange = e => {
+    const preview = document.getElementById('preview');
+    preview.innerHTML = '';
+    Array.from(e.target.files).slice(0,4).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = document.createElement('img');
+        img.src = ev.target.result;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  document.getElementById('uploadForm').onsubmit = async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+    const data = await res.json();
+    document.getElementById('result').innerHTML = data.success
+      ? '<span style="color:green;">' + data.message + '</span>'
+      : '<span style="color:red;">Error: ' + data.error + '</span>';
+  };
+</script>
+</body>
+</html>

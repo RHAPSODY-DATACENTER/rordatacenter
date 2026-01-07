@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload Dataset - GPD Admin Portal</title>
+  <link rel="stylesheet" href="css_file/style.css" />
+  <style>
+    body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #003366;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back:hover { text-decoration: underline; }
+    h1 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #555;
+      margin-bottom: 40px;
+      font-size: 1.1rem;
+    }
+    .upload-area {
+      border: 4px dashed #003366;
+      border-radius: 20px;
+      padding: 60px 20px;
+      text-align: center;
+      background: #f8fbff;
+      cursor: pointer;
+      transition: all 0.4s;
+      margin-bottom: 20px;
+    }
+    .upload-area:hover {
+      background: #e8f4ff;
+      border-color: #0066cc;
+    }
+    .upload-area.dragover {
+      background: #d0e8ff;
+      border-color: #0066cc;
+    }
+    .upload-area h3 { color: #003366; margin: 0 0 10px; }
+    .upload-area p { color: #666; margin: 5px 0; }
+
+    #fileName {
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #003366;
+      font-size: 1.1rem;
+    }
+
+    .btn-upload {
+      display: block;
+      width: 300px;
+      margin: 30px auto;
+      padding: 16px;
+      background: linear-gradient(135deg, #003366, #0066cc);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-upload:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 25px rgba(0,102,204,0.4);
+    }
+    .btn-upload:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .success { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #003366;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/admin" class="back">Back to Dashboard</a>
+  <h1>Upload Dataset</h1>
+  <p class="subtitle">
+    Drop your Excel file below<br>
+    <strong>Auto-sorted</strong> into Regional • Zonal • Group • Chapter • RZM tables
+  </p>
+
+  <div id="dropArea" class="upload-area">
+    <h3>Drop Excel File Here</h3>
+    <p>or click to browse • Supports .xlsx, .xls</p>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+  </div>
+
+  <div id="fileName"></div>
+
+  <button onclick="uploadFile()" class="btn-upload" id="uploadBtn" disabled>
+    Upload & Auto-Sort
+  </button>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  const dropArea = document.getElementById('dropArea');
+  const fileInput = document.getElementById('fileInput');
+  const fileName = document.getElementById('fileName');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const result = document.getElementById('result');
+
+  dropArea.onclick = () => fileInput.click();
+
+  ['dragover', 'dragenter'].forEach(e => dropArea.addEventListener(e, ev => {
+    ev.preventDefault();
+    dropArea.classList.add('dragover');
+  }));
+  ['dragleave', 'dragend', 'drop'].forEach(e => dropArea.addEventListener(e, ev => {
+    if (e !== 'drop') ev.preventDefault();
+    dropArea.classList.remove('dragover');
+  }));
+
+  dropArea.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    const valid = ['xlsx', 'xls'].some(ext => file.name.toLowerCase().endsWith(ext));
+    if (!valid) {
+      result.innerHTML = `<div class="result error">Only Excel files (.xlsx, .xls) allowed</div>`;
+      return;
+    }
+    fileName.textContent = `Selected: ${file.name}`;
+    uploadBtn.disabled = false;
+  }
+
+  async function uploadFile() {
+    if (!fileInput.files.length) return;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading & Sorting...";
+    result.innerHTML = '<div class="loading">Processing all sheets...</div>';
+
+    try {
+      const res = await fetch('/api/upload-dataset', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        result.innerHTML = `
+          <div class="result success">
+            Success! ${data.message}
+          </div>`;
+      } else {
+        result.innerHTML = `
+          <div class="result error">
+            Error: ${data.error || 'Upload failed'}
+          </div>`;
+      }
+    } catch (err) {
+      result.innerHTML = `<div class="result error">Network error</div>`;
+    }
+
+    uploadBtn.textContent = "Upload & Auto-Sort";
+  }
+</script>
+
+</body>
+</html>
