@@ -10,6 +10,14 @@ from datetime import datetime
 from functools import wraps
 from db_converter import DatabaseConverter
 
+# Initialize DB once when module is loaded (safe for production)
+db = DatabaseConverter(
+    database_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'gpd_portal.db'),
+    upload_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+)
+db.init_db()
+db.add_images_json_column()
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'gpd_super_secure_key_2025_change_this_later'
@@ -25,11 +33,10 @@ DATABASE_PATH = os.path.join(DATABASE_FOLDER, 'gpd_portal.db')
 PUBLIC_FOLDER = os.path.join(BASE_DIR, 'public')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DATABASE_FOLDER, exist_ok=True)
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CAMPUS_IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
-
-db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
 
 
 def login_required(f):
@@ -59,7 +66,7 @@ def church_image(filename):
     return send_from_directory(CHURCH_IMAGES_FOLDER, filename)
 
 
-# =============== SEARCH API - BOTH MINISTRIES (FULL FIELDS) ===============
+# =============== SEARCH API - BOTH MINISTRIES ===============
 @app.route('/api/search')
 def search():
     query = request.args.get('q', '').strip().lower()
@@ -100,11 +107,10 @@ def search():
             'all_photos': all_photos,
             'kc_id': row[3] or '',
             'region': row[4] or '',
-            'zone': row[5] or '',  # blw_zone or zone
+            'zone': row[5] or '',
             'group': row[6] or '',
-            'chapter': row[7] or ''  # chapter or church
+            'chapter': row[7] or ''
         }
-
         results.append(result)
 
     conn.close()
@@ -149,70 +155,24 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA - BOTH MINISTRIES ===============
+# =============== DASHBOARD DATA ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
-    def get_ministry_stats(table, zone_col='blw_zone', group_col='group_name', chapter_col='chapter'):
+    def get_stats(table):
         conn = sqlite3.connect(DATABASE_PATH)
         cur = conn.cursor()
-
         cur.execute(f"SELECT COUNT(*) FROM {table}")
-        total_records = cur.fetchone()[0]
-
-        cur.execute(f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''")
-        unique_regions = cur.fetchone()[0]
-
-        cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
-        unique_zones = cur.fetchone()[0]
-
-        cur.execute(f"""
-            SELECT region, COUNT(*) as count
-            FROM {table}
-            WHERE region IS NOT NULL AND region != ''
-            GROUP BY region
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
-
-        cur.execute(f"""
-            SELECT {zone_col}, COUNT(*) as count
-            FROM {table}
-            WHERE {zone_col} IS NOT NULL AND {zone_col} != ''
-            GROUP BY {zone_col}
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
-
-        cur.execute(f"""
-            SELECT designation, COUNT(*) as count
-            FROM {table}
-            WHERE designation IS NOT NULL AND designation != ''
-            GROUP BY designation
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        designations = [{"designation": d[0] or "Unknown", "count": d[1]} for d in cur.fetchall()]
-
+        total = cur.fetchone()[0]
         conn.close()
+        return {"total_records": total}
 
-        return {
-            "total_records": total_records,
-            "unique_regions": unique_regions,
-            "unique_zones": unique_zones,
-            "regions": regions,
-            "zones": zones,
-            "designations": designations
-        }
-
-    campus_stats = get_ministry_stats('campus_records', 'blw_zone', 'group_name', 'chapter')
-    church_stats = get_ministry_stats('church_records', 'zone', 'group_name', 'church')
+    campus = get_stats('campus_records')
+    church = get_stats('church_records')
 
     return jsonify({
-        "campus": campus_stats,
-        "church": church_stats
+        "campus": campus,
+        "church": church
     })
 
 
@@ -277,7 +237,7 @@ def upload_image():
     saved_paths = []
     for file in valid_files:
         ext = os.path.splitext(file.filename)[1].lower()
-        if ext not in {'.jpg', '.jpeg', '.png', '.gif', '.webp'}:
+        if ext not in {'.jpg', '.jpeg', '.png', '.webp'}:
             continue
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
         safe_name = secure_filename(name.replace(' ', '_'))
@@ -295,7 +255,7 @@ def upload_image():
     conn.commit()
     conn.close()
 
-    return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s)'})
+    return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s) to {ministry} ministry'})
 
 
 # =============== ADD RECORD ===============
@@ -354,7 +314,5 @@ def add_record():
 
 
 if __name__ == '__main__':
-    db.init_db()
-    db.add_images_json_column()
-    print("GPD PORTAL RUNNING - Dual Ministry Support")
+    print("GPD PORTAL RUNNING (local mode)")
     app.run(debug=True, port=5000)
