@@ -50,17 +50,17 @@
           <div class="feature-card">
             <div class="feature-icon"><i class="fas fa-search"></i></div>
             <h3>Search Data</h3>
-            <p>Find any pastor by name, designation, zone, region, chapter or group instantly.</p>
+            <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon"><i class="fas fa-images"></i></div>
             <h3>Photo Gallery</h3>
-            <p>View up to 4 high-quality photos. Click any result to see all photos.</p>
+            <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon"><i class="fas fa-users"></i></div>
             <h3>Complete Records</h3>
-            <p>All levels: Regional, Zonal, Group, Chapter & RZM pastors.</p>
+            <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
           </div>
         </div>
       </section>
@@ -89,6 +89,12 @@
     <section id="search-data-view" class="view">
       <section class="dashboard-section search-dashboard">
         <div class="search-inner">
+          <!-- Ministry Toggle -->
+          <div style="text-align:center; margin-bottom:30px;">
+            <button id="campus-btn" class="btn btn-primary" onclick="setMinistry('campus')">BLW Campus Ministry</button>
+            <button id="church-btn" class="btn" onclick="setMinistry('church')">Christ Embassy Church Ministry</button>
+          </div>
+
           <div class="search-box">
             <input 
               id="search-input-hero" 
@@ -145,22 +151,6 @@
     <div id="galleryCaption" style="color:white; font-size:1.3rem; margin-top:20px;"></div>
   </div>
 
-  <style>
-    .result-card {
-      transition: transform 0.3s;
-      cursor: pointer;
-      background: white;
-      padding: 25px;
-      border-radius: 20px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    .result-card:hover {
-      transform: translateY(-10px);
-    }
-  </style>
-
-  <!-- SEARCH & GALLERY SCRIPT -->
   <script>
     // Navigation
     document.querySelectorAll('[data-view]').forEach(link => {
@@ -179,7 +169,21 @@
       document.querySelector('.nav-menu').classList.toggle('open');
     });
 
-    // Search function
+    // Ministry toggle
+    let currentMinistry = 'campus';
+
+    function setMinistry(ministry) {
+      currentMinistry = ministry;
+      document.getElementById('campus-btn').classList.toggle('btn-primary', ministry === 'campus');
+      document.getElementById('church-btn').classList.toggle('btn-primary', ministry === 'church');
+    }
+
+    // Search
+    document.getElementById('search-btn-hero')?.addEventListener('click', performSearch);
+    document.getElementById('search-input-hero')?.addEventListener('keypress', e => {
+      if (e.key === 'Enter') performSearch();
+    });
+
     function performSearch() {
       const query = document.getElementById('search-input-hero').value.trim();
       const resultsDiv = document.getElementById('search-results');
@@ -191,7 +195,7 @@
 
       resultsDiv.innerHTML = `<p style="text-align:center; padding:40px; color:#003366;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>`;
 
-      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
         .then(res => res.json())
         .then(data => {
           resultsDiv.innerHTML = '';
@@ -200,7 +204,7 @@
             resultsDiv.innerHTML = `
               <div style="text-align:center; padding:60px; color:#666;">
                 <i class="fas fa-search" style="font-size:48px; color:#ddd; margin-bottom:20px;"></i>
-                <p style="font-size:1.3rem;">No results found for "<strong>${query}</strong>"</p>
+                <p style="font-size:1.3rem;">No results found for "<strong>${query}</strong>" in ${currentMinistry === 'campus' ? 'BLW Campus' : 'Christ Embassy Church'} Ministry</p>
               </div>`;
             return;
           }
@@ -218,17 +222,17 @@
           data.forEach(person => {
             const photoCount = person.all_photos.length;
             grid.innerHTML += `
-              <div class="result-card" onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
+              <div class="result-card" style="cursor:pointer;" onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
                 <img src="${person.photo}" 
                      onerror="this.src='/public/default-photo.jpg'"
                      style="width:150px; height:150px; object-fit:cover; border-radius:50%; border:5px solid #003366; margin-bottom:15px;">
                 <h3 style="color:#003366; margin:10px 0;">${person.name}</h3>
                 <p style="margin:8px 0; color:#444;"><strong>Designation:</strong> ${person.designation || '—'}</p>
                 <p style="margin:8px 0; color:#444;"><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>BLW Zone:</strong> ${person.blw_zone || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Zone:</strong> ${person.zone || person.blw_zone || '—'}</p>
                 <p style="margin:8px 0; color:#444;"><strong>Region:</strong> ${person.region || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Chapter:</strong> ${person.chapter || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Group:</strong> ${person.group || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Group:</strong> ${person.group || person.group_name || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Chapter/Church:</strong> ${person.chapter || person.church || '—'}</p>
                 ${photoCount > 1 ? `<p style="margin-top:15px; color:#003366; font-weight:bold;">📸 Click to view all ${photoCount} photos</p>` : ''}
               </div>
             `;
@@ -242,26 +246,18 @@
         });
     }
 
-    // Trigger search
-    document.getElementById('search-btn-hero')?.addEventListener('click', performSearch);
-    document.getElementById('search-input-hero')?.addEventListener('keypress', e => {
-      if (e.key === 'Enter') performSearch();
-    });
-
-    // GALLERY
+    // Gallery
     let currentPhotos = [];
     let currentIndex = 0;
     let currentName = '';
 
     function openGallery(photos, name) {
-      if (!photos || photos.length === 0) {
-        alert("No photos available");
-        return;
-      }
+      if (!photos || photos.length === 0) return;
       currentPhotos = photos;
       currentIndex = 0;
       currentName = name;
-      showImage();
+      document.getElementById('galleryImg').src = photos[0];
+      document.getElementById('galleryCaption').textContent = `${name} (1 of ${photos.length})`;
       document.getElementById('galleryModal').style.display = 'flex';
     }
 
@@ -269,30 +265,23 @@
       document.getElementById('galleryModal').style.display = 'none';
     }
 
-    function showImage() {
-      const img = document.getElementById('galleryImg');
-      const caption = document.getElementById('galleryCaption');
-      img.src = currentPhotos[currentIndex];
-      caption.textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
-    }
-
     function nextImage() {
       currentIndex = (currentIndex + 1) % currentPhotos.length;
-      showImage();
+      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
+      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
     }
 
     function prevImage() {
       currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
-      showImage();
+      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
+      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
     }
 
-    // Close on outside click or X
-    document.getElementById('galleryModal').addEventListener('click', function(e) {
-      if (e.target === this || e.target.tagName === 'SPAN') closeGallery();
-    });
+    document.getElementById('galleryModal').onclick = e => {
+      if (e.target.id === 'galleryModal') closeGallery();
+    };
 
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', e => {
       if (document.getElementById('galleryModal').style.display === 'none') return;
       if (e.key === 'ArrowRight') nextImage();
       if (e.key === 'ArrowLeft') prevImage();

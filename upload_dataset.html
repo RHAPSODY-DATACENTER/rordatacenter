@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Upload Dataset - GPD Admin Portal</title>
-  <link rel="stylesheet" href="css_file/style.css" />
+  <link rel="stylesheet" href="/public/css_file/styles.css" />
   <style>
     body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; }
     .container {
@@ -34,6 +34,15 @@
       color: #555;
       margin-bottom: 40px;
       font-size: 1.1rem;
+    }
+    select {
+      width: 100%;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 12px;
+      border: 2px solid #ddd;
+      font-size: 1.1rem;
+      background: white;
     }
     .upload-area {
       border: 4px dashed #003366;
@@ -109,12 +118,17 @@
 <body>
 
 <div class="container">
-  <a href="/admin" class="back">Back to Dashboard</a>
+  <a href="/admin" class="back">← Back to Dashboard</a>
   <h1>Upload Dataset</h1>
   <p class="subtitle">
-    Drop your Excel file below<br>
-    <strong>Auto-sorted</strong> into Regional • Zonal • Group • Chapter • RZM tables
+    Select the ministry and upload your Excel file
   </p>
+
+  <select id="ministrySelect" required>
+    <option value="">-- Select Ministry --</option>
+    <option value="campus">BLW Campus Ministry</option>
+    <option value="church">Christ Embassy Church Ministry</option>
+  </select>
 
   <div id="dropArea" class="upload-area">
     <h3>Drop Excel File Here</h3>
@@ -125,7 +139,7 @@
   <div id="fileName"></div>
 
   <button onclick="uploadFile()" class="btn-upload" id="uploadBtn" disabled>
-    Upload & Auto-Sort
+    Upload Dataset
   </button>
 
   <div id="result"></div>
@@ -137,8 +151,15 @@
   const fileName = document.getElementById('fileName');
   const uploadBtn = document.getElementById('uploadBtn');
   const result = document.getElementById('result');
+  const ministrySelect = document.getElementById('ministrySelect');
 
-  dropArea.onclick = () => fileInput.click();
+  dropArea.onclick = () => {
+    if (ministrySelect.value === '') {
+      alert("Please select a ministry first");
+      return;
+    }
+    fileInput.click();
+  };
 
   ['dragover', 'dragenter'].forEach(e => dropArea.addEventListener(e, ev => {
     ev.preventDefault();
@@ -151,11 +172,15 @@
 
   dropArea.addEventListener('drop', e => {
     e.preventDefault();
+    if (ministrySelect.value === '') {
+      alert("Please select a ministry first");
+      return;
+    }
     if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
   });
 
   fileInput.addEventListener('change', () => {
-    if (fileInput.files.length) handleFile(fileInput.files[0]);
+    if (fileInput.files.length && ministrySelect.value !== '') handleFile(fileInput.files[0]);
   });
 
   function handleFile(file) {
@@ -169,14 +194,19 @@
   }
 
   async function uploadFile() {
+    if (ministrySelect.value === '') {
+      alert("Please select a ministry");
+      return;
+    }
     if (!fileInput.files.length) return;
 
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
+    formData.append('ministry', ministrySelect.value);
 
     uploadBtn.disabled = true;
-    uploadBtn.textContent = "Uploading & Sorting...";
-    result.innerHTML = '<div class="loading">Processing all sheets...</div>';
+    uploadBtn.textContent = "Uploading...";
+    result.innerHTML = '<div class="loading">Processing...</div>';
 
     try {
       const res = await fetch('/api/upload-dataset', {
@@ -186,21 +216,17 @@
       const data = await res.json();
 
       if (data.success) {
-        result.innerHTML = `
-          <div class="result success">
-            Success! ${data.message}
-          </div>`;
+        result.innerHTML = `<div class="result success">Success! ${data.message}</div>`;
       } else {
-        result.innerHTML = `
-          <div class="result error">
-            Error: ${data.error || 'Upload failed'}
-          </div>`;
+        result.innerHTML = `<div class="result error">Error: ${data.error || 'Upload failed'}</div>`;
       }
     } catch (err) {
       result.innerHTML = `<div class="result error">Network error</div>`;
     }
 
-    uploadBtn.textContent = "Upload & Auto-Sort";
+    uploadBtn.textContent = "Upload Dataset";
+    uploadBtn.disabled = true;
+    fileName.textContent = '';
   }
 </script>
 

@@ -19,12 +19,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 DATABASE_FOLDER = os.path.join(BASE_DIR, 'database')
 IMAGES_FOLDER = os.path.join(BASE_DIR, 'images')
+CAMPUS_IMAGES_FOLDER = os.path.join(IMAGES_FOLDER, 'campus')
+CHURCH_IMAGES_FOLDER = os.path.join(IMAGES_FOLDER, 'church')
 DATABASE_PATH = os.path.join(DATABASE_FOLDER, 'gpd_portal.db')
 PUBLIC_FOLDER = os.path.join(BASE_DIR, 'public')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(DATABASE_FOLDER, exist_ok=True)
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
+os.makedirs(CAMPUS_IMAGES_FOLDER, exist_ok=True)
+os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 
 db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
 
@@ -47,50 +50,62 @@ def index():
 def public_files(filename):
     return send_from_directory(PUBLIC_FOLDER, filename)
 
-@app.route('/images/<filename>')
-def uploaded_image(filename):
-    return send_from_directory(IMAGES_FOLDER, filename)
+@app.route('/images/campus/<filename>')
+def campus_image(filename):
+    return send_from_directory(CAMPUS_IMAGES_FOLDER, filename)
+
+@app.route('/images/church/<filename>')
+def church_image(filename):
+    return send_from_directory(CHURCH_IMAGES_FOLDER, filename)
 
 
-# =============== SEARCH API (PUBLIC) - MULTIPLE IMAGES FROM JSON ===============
+# =============== SEARCH API - BOTH MINISTRIES (FULL FIELDS) ===============
 @app.route('/api/search')
 def search():
     query = request.args.get('q', '').strip().lower()
+    ministry = request.args.get('ministry', 'campus')
+
     if not query:
         return jsonify([])
+
+    table = 'campus_records' if ministry == 'campus' else 'church_records'
 
     results = []
     conn = sqlite3.connect(DATABASE_PATH)
     cur = conn.cursor()
 
-    cur.execute("""
-        SELECT name, designation, blw_zone, images_json, region, chapter, group_name, kc_id
-        FROM gpd_records
-        WHERE LOWER(name) LIKE ? 
-           OR LOWER(designation) LIKE ? 
-           OR LOWER(blw_zone) LIKE ?
-           OR LOWER(kc_id) LIKE ?
-        ORDER BY name
-    """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
+    if ministry == 'campus':
+        cur.execute(f"""
+            SELECT name, designation, images_json, kc_id, region, blw_zone, group_name, chapter
+            FROM {table}
+            WHERE LOWER(name) LIKE ? OR LOWER(kc_id) LIKE ?
+            ORDER BY name
+        """, (f'%{query}%', f'%{query}%'))
+    else:
+        cur.execute(f"""
+            SELECT name, designation, images_json, kc_id, region, zone, group_name, church
+            FROM {table}
+            WHERE LOWER(name) LIKE ? OR LOWER(kc_id) LIKE ?
+            ORDER BY name
+        """, (f'%{query}%', f'%{query}%'))
 
     for row in cur.fetchall():
-        try:
-            all_photos = json.loads(row[3]) if row[3] and row[3] != '[]' else []
-        except:
-            all_photos = []
+        all_photos = json.loads(row[2]) if row[2] else []
         main_photo = all_photos[0] if all_photos else '/public/default-photo.jpg'
 
-        results.append({
+        result = {
             'name': row[0],
             'designation': row[1] or '',
-            'blw_zone': row[2] or '',
             'photo': main_photo,
             'all_photos': all_photos,
+            'kc_id': row[3] or '',
             'region': row[4] or '',
-            'chapter': row[5] or '',
+            'zone': row[5] or '',  # blw_zone or zone
             'group': row[6] or '',
-            'kc_id': row[7] or ''
-        })
+            'chapter': row[7] or ''  # chapter or church
+        }
+
+        results.append(result)
 
     conn.close()
     return jsonify(results)
@@ -101,7 +116,6 @@ def search():
 @login_required
 def admin_dashboard():
     return send_from_directory(BASE_DIR, 'dashboard.html')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -135,168 +149,201 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA API ===============
+# =============== DASHBOARD DATA - BOTH MINISTRIES ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
-    conn = sqlite3.connect(DATABASE_PATH)
-    cur = conn.cursor()
-
-    cur.execute("SELECT COUNT(*) FROM gpd_records")
-    total_records = cur.fetchone()[0]
-
-    cur.execute("SELECT COUNT(DISTINCT region) FROM gpd_records WHERE region IS NOT NULL AND region != ''")
-    unique_regions = cur.fetchone()[0]
-
-    cur.execute("SELECT COUNT(DISTINCT blw_zone) FROM gpd_records WHERE blw_zone IS NOT NULL AND blw_zone != ''")
-    unique_zones = cur.fetchone()[0]
-
-    cur.execute("""
-        SELECT region, COUNT(*) as count
-        FROM gpd_records
-        WHERE region IS NOT NULL AND region != ''
-        GROUP BY region
-        ORDER BY count DESC
-        LIMIT 10
-    """)
-    regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
-
-    cur.execute("""
-        SELECT blw_zone, COUNT(*) as count
-        FROM gpd_records
-        WHERE blw_zone IS NOT NULL AND blw_zone != ''
-        GROUP BY blw_zone
-        ORDER BY count DESC
-        LIMIT 10
-    """)
-    zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
-
-    cur.execute("""
-        SELECT designation, COUNT(*) as count
-        FROM gpd_records
-        WHERE designation IS NOT NULL AND designation != ''
-        GROUP BY designation
-        ORDER BY count DESC
-        LIMIT 10
-    """)
-    designations = [{"designation": d[0] or "Unknown", "count": d[1]} for d in cur.fetchall()]
-
-    conn.close()
-
-    return jsonify({
-        "total_records": total_records,
-        "unique_regions": unique_regions,
-        "unique_zones": unique_zones,
-        "regions": regions,
-        "zones": zones,
-        "designations": designations
-    })
-
-
-# =============== UPLOAD IMAGE (UP TO 4 - SAVES ALL TO FOLDER & JSON LIST) ===============
-@app.route('/api/upload-image', methods=['POST'])
-@login_required
-def upload_image():
-    try:
-        if 'images' not in request.files:
-            return jsonify({'success': False, 'error': 'No images selected'}), 400
-        files = request.files.getlist('images')
-        valid_files = [f for f in files if f.filename != '']
-        if not valid_files:
-            return jsonify({'success': False, 'error': 'No valid images'}), 400
-        if len(valid_files) > 4:
-            return jsonify({'success': False, 'error': 'Maximum 4 images allowed'}), 400
-
-        name = request.form.get('name', '').strip()
-        if not name:
-            return jsonify({'success': False, 'error': 'Name required'}), 400
-
+    def get_ministry_stats(table, zone_col='blw_zone', group_col='group_name', chapter_col='chapter'):
         conn = sqlite3.connect(DATABASE_PATH)
         cur = conn.cursor()
 
-        cur.execute("SELECT images_json FROM gpd_records WHERE TRIM(LOWER(name)) = TRIM(LOWER(?))", (name,))
-        row = cur.fetchone()
-        if not row:
-            conn.close()
-            return jsonify({'success': False, 'error': f'No record found: "{name}"'}), 404
+        cur.execute(f"SELECT COUNT(*) FROM {table}")
+        total_records = cur.fetchone()[0]
 
-        current_images = json.loads(row[0]) if row[0] and row[0] != '[]' else []
+        cur.execute(f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''")
+        unique_regions = cur.fetchone()[0]
 
-        saved_paths = []
-        for file in valid_files:
-            ext = os.path.splitext(file.filename)[1].lower()
-            if ext not in {'.jpg', '.jpeg', '.png', '.gif', '.webp'}:
-                continue
+        cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
+        unique_zones = cur.fetchone()[0]
 
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-            safe_name = secure_filename(name.replace(' ', '_'))
-            filename = f"{safe_name}_{timestamp}{ext}"
-            filepath = os.path.join(IMAGES_FOLDER, filename)
-            file.save(filepath)
-            saved_paths.append(f"/images/{filename}")
+        cur.execute(f"""
+            SELECT region, COUNT(*) as count
+            FROM {table}
+            WHERE region IS NOT NULL AND region != ''
+            GROUP BY region
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
 
-        # Combine and keep only latest 4
-        all_images = current_images + saved_paths
-        final_images = all_images[-4:]  # Last 4 (most recent)
+        cur.execute(f"""
+            SELECT {zone_col}, COUNT(*) as count
+            FROM {table}
+            WHERE {zone_col} IS NOT NULL AND {zone_col} != ''
+            GROUP BY {zone_col}
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
 
-        cur.execute("UPDATE gpd_records SET images_json = ? WHERE TRIM(LOWER(name)) = LOWER(?)",
-                    (json.dumps(final_images), name))
-        conn.commit()
+        cur.execute(f"""
+            SELECT designation, COUNT(*) as count
+            FROM {table}
+            WHERE designation IS NOT NULL AND designation != ''
+            GROUP BY designation
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        designations = [{"designation": d[0] or "Unknown", "count": d[1]} for d in cur.fetchall()]
+
         conn.close()
 
-        return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s). Total: {len(final_images)}'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return {
+            "total_records": total_records,
+            "unique_regions": unique_regions,
+            "unique_zones": unique_zones,
+            "regions": regions,
+            "zones": zones,
+            "designations": designations
+        }
+
+    campus_stats = get_ministry_stats('campus_records', 'blw_zone', 'group_name', 'chapter')
+    church_stats = get_ministry_stats('church_records', 'zone', 'group_name', 'church')
+
+    return jsonify({
+        "campus": campus_stats,
+        "church": church_stats
+    })
 
 
-# =============== UPLOAD DATASET & ADD RECORD (unchanged) ===============
+# =============== UPLOAD DATASET ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file'}), 400
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        if not db.allowed_file(file.filename):
-            return jsonify({'error': 'Only Excel/CSV'}), 400
+    ministry = request.form.get('ministry')
+    if ministry not in ['campus', 'church']:
+        return jsonify({'error': 'Invalid ministry'}), 400
 
-        filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-        saved_name = timestamp + "_" + filename
-        filepath = os.path.join(UPLOAD_FOLDER, saved_name)
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    if not db.allowed_file(file.filename):
+        return jsonify({'error': 'Only Excel/CSV'}), 400
+
+    filename = secure_filename(file.filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+    saved_name = timestamp + "_" + filename
+    filepath = os.path.join(UPLOAD_FOLDER, saved_name)
+    file.save(filepath)
+
+    result = db.convert_excel_to_sql(filepath, ministry)
+    return jsonify(result)
+
+
+# =============== UPLOAD IMAGE ===============
+@app.route('/api/upload-image', methods=['POST'])
+@login_required
+def upload_image():
+    ministry = request.form.get('ministry')
+    if ministry not in ['campus', 'church']:
+        return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
+
+    images_folder = CAMPUS_IMAGES_FOLDER if ministry == 'campus' else CHURCH_IMAGES_FOLDER
+    table = 'campus_records' if ministry == 'campus' else 'church_records'
+
+    if 'images' not in request.files:
+        return jsonify({'success': False, 'error': 'No images'}), 400
+    files = request.files.getlist('images')
+    valid_files = [f for f in files if f.filename != '']
+    if len(valid_files) > 4:
+        return jsonify({'success': False, 'error': 'Max 4 images'}), 400
+
+    name = request.form.get('name', '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'Name required'}), 400
+
+    conn = sqlite3.connect(DATABASE_PATH)
+    cur = conn.cursor()
+    cur.execute(f"SELECT images_json FROM {table} WHERE TRIM(LOWER(name)) = TRIM(LOWER(?))", (name,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Name not found'}), 404
+
+    current = json.loads(row[0]) if row[0] else []
+
+    saved_paths = []
+    for file in valid_files:
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in {'.jpg', '.jpeg', '.png', '.gif', '.webp'}:
+            continue
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        safe_name = secure_filename(name.replace(' ', '_'))
+        filename = f"{safe_name}_{timestamp}{ext}"
+        filepath = os.path.join(images_folder, filename)
         file.save(filepath)
+        prefix = 'campus' if ministry == 'campus' else 'church'
+        saved_paths.append(f"/images/{prefix}/{filename}")
 
-        result = db.convert_excel_to_sql(filepath)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    all_images = current + saved_paths
+    final_images = all_images[-4:]
+
+    cur.execute(f"UPDATE {table} SET images_json = ? WHERE TRIM(LOWER(name)) = LOWER(?)",
+                (json.dumps(final_images), name))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s)'})
 
 
+# =============== ADD RECORD ===============
 @app.route('/api/add-record', methods=['POST'])
 @login_required
 def add_record():
     try:
         data = request.get_json()
+        ministry = data.get('ministry')
+        if ministry not in ['campus', 'church']:
+            return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
+
         name = data.get('name', '').strip()
         if not name:
             return jsonify({'success': False, 'error': 'Name required'}), 400
 
         conn = sqlite3.connect(DATABASE_PATH)
         cur = conn.cursor()
-        cur.execute('''
-            INSERT INTO gpd_records (region, designation, name, kc_id, blw_zone, group_name, chapter)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            data.get('region', ''),
-            data.get('designation', ''),
-            name,
-            data.get('kc_id', ''),
-            data.get('blw_zone', ''),
-            data.get('group_name', ''),
-            data.get('chapter', '')
-        ))
+        table = 'campus_records' if ministry == 'campus' else 'church_records'
+
+        if ministry == 'campus':
+            cur.execute(f'''
+                INSERT INTO {table} 
+                (region, designation, name, kc_id, blw_zone, group_name, chapter)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data.get('region', ''),
+                data.get('designation', ''),
+                name,
+                data.get('kc_id', ''),
+                data.get('blw_zone', ''),
+                data.get('group_name', ''),
+                data.get('chapter', '')
+            ))
+        else:
+            cur.execute(f'''
+                INSERT INTO {table} 
+                (region, designation, name, kc_id, group_name, zone, church)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                data.get('region', ''),
+                data.get('designation', ''),
+                name,
+                data.get('kc_id', ''),
+                data.get('group_name', ''),
+                data.get('zone', ''),
+                data.get('church', '')
+            ))
         conn.commit()
         conn.close()
         return jsonify({'success': True, 'message': 'Record added'})
@@ -308,9 +355,6 @@ def add_record():
 
 if __name__ == '__main__':
     db.init_db()
-    db.add_images_json_column()  # Run once to add the column
-    print("GPD PORTAL RUNNING")
-    print("Public: http://127.0.0.1:5000/")
-    print("Admin: http://127.0.0.1:5000/admin")
-    print("Default login: super / superuser")
+    db.add_images_json_column()
+    print("GPD PORTAL RUNNING - Dual Ministry Support")
     app.run(debug=True, port=5000)

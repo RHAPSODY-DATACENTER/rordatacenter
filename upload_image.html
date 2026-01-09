@@ -1,47 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Upload Photos</title>
-  <link rel="stylesheet" href="/public/css_file/styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload Photos - GPD Admin Portal</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css" />
   <style>
-    .container { max-width: 700px; margin: 50px auto; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
-    select, input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; }
-    button { background: #003366; color: white; padding: 15px; border: none; border-radius: 10px; cursor: pointer; }
-    .preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-    .preview img { width: 100%; border-radius: 12px; }
+    body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    .back { display: inline-block; margin-bottom: 20px; color: #003366; text-decoration: none; font-weight: bold; }
+    h1 { text-align: center; color: #003366; font-size: 2.2rem; margin-bottom: 20px; }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 12px;
+      border: 2px solid #ddd;
+      font-size: 1.1rem;
+    }
+    .upload-area {
+      border: 4px dashed #003366;
+      border-radius: 20px;
+      padding: 60px;
+      text-align: center;
+      background: #f8fbff;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+    .preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .preview img { width: 100%; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    button {
+      display: block;
+      width: 300px;
+      margin: 30px auto;
+      padding: 16px;
+      background: linear-gradient(135deg, #003366, #0066cc);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .result { margin-top: 30px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+    .success { color: green; }
+    .error { color: red; }
   </style>
 </head>
 <body>
+
 <div class="container">
-  <a href="/admin" style="color:#003366;">← Back to Dashboard</a>
-  <h1 style="text-align:center; color:#003366;">Upload Up to 4 Photos</h1>
+  <a href="/admin" class="back">← Back to Dashboard</a>
+  <h1>Upload Up to 4 Photos</h1>
 
   <form id="uploadForm" enctype="multipart/form-data">
-    <label>Select Ministry</label>
     <select name="ministry" required>
+      <option value="">-- Select Ministry --</option>
       <option value="campus">BLW Campus Ministry</option>
       <option value="church">Christ Embassy Church Ministry</option>
     </select>
 
-    <label>Full Name (Exact Match)</label>
-    <input type="text" name="name" required>
+    <input type="text" name="name" placeholder="Full Name (Exact Match Required)" required>
 
-    <label>Choose up to 4 images</label>
-    <input type="file" name="images" accept="image/*" multiple required>
+    <div class="upload-area">
+      <h3>Drop up to 4 images here</h3>
+      <p>or click to select • JPG, PNG, WebP</p>
+      <input type="file" name="images" accept="image/*" multiple required>
+    </div>
 
     <div id="preview" class="preview"></div>
 
     <button type="submit">Upload Photos</button>
   </form>
 
-  <div id="result" style="margin-top:30px; text-align:center; font-weight:bold;"></div>
+  <div id="result" class="result"></div>
 </div>
 
 <script>
-  document.querySelector('input[type=file]').onchange = e => {
+  document.querySelector('input[type="file"]').onchange = function(e) {
     const preview = document.getElementById('preview');
     preview.innerHTML = '';
-    Array.from(e.target.files).slice(0,4).forEach(file => {
+    Array.from(e.target.files).slice(0, 4).forEach(file => {
       const reader = new FileReader();
       reader.onload = ev => {
         const img = document.createElement('img');
@@ -52,15 +103,19 @@
     });
   };
 
-  document.getElementById('uploadForm').onsubmit = async e => {
+  document.getElementById('uploadForm').onsubmit = async function(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+    const formData = new FormData(this);
+    const res = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData
+    });
     const data = await res.json();
     document.getElementById('result').innerHTML = data.success
-      ? '<span style="color:green;">' + data.message + '</span>'
-      : '<span style="color:red;">Error: ' + data.error + '</span>';
+      ? '<span class="success">' + data.message + '</span>'
+      : '<span class="error">Error: ' + data.error + '</span>';
   };
 </script>
+
 </body>
 </html>
