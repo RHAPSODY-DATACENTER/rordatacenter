@@ -11,6 +11,21 @@
 
   <!-- Your Public CSS -->
   <link rel="stylesheet" href="/public/css_file/styles.css">
+
+  <style>
+    .hidden { display: none !important; }
+    .view-section { 
+      transition: opacity 0.4s ease, transform 0.4s ease; 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+    .view-section.hidden { 
+      opacity: 0; 
+      transform: translateY(20px); 
+      pointer-events: none; 
+    }
+    .active-view { font-weight: bold; border-bottom: 3px solid #ff6200; }
+  </style>
 </head>
 
 <body>
@@ -19,9 +34,9 @@
       <i class="fas fa-database"></i> ROR PARTNERSHIP DATAHUB
     </div>
     <nav class="nav-menu">
-      <a data-view="home" class="nav-link active">Home</a>
-      <a data-view="search-data" class="nav-link">Search Data</a>
-      <a data-view="newsletter" class="nav-link">Newsletter</a>
+      <a href="#" data-view="home" class="nav-link active-view">Home</a>
+      <a href="#" data-view="search-data" class="nav-link">Search Data</a>
+      <a href="#" data-view="newsletter" class="nav-link">Newsletter</a>
     </nav>
     <button class="menu-toggle">
       <i class="fas fa-bars"></i>
@@ -29,71 +44,107 @@
   </header>
 
   <main class="main-content">
-    <!-- Hero Section -->
-    <section id="hero" class="hero-section">
-      <div class="hero-overlay"></div>
-      <div class="hero-content">
-        <h1 class="hero-title">ROR PARTNERSHIP DATAHUB</h1>
-        <p class="hero-subtitle">Official Directory & Data Management System</p>
-        
-        <div class="ministry-toggle">
+
+    <!-- =================== HOME VIEW =================== -->
+    <section id="home-view" class="view-section">
+      <!-- Hero Section -->
+      <section id="hero" class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <h1 class="hero-title">ROR PARTNERSHIP DATAHUB</h1>
+          <p class="hero-subtitle">Official Directory & Data Management System</p>
+        </div>
+      </section>
+
+      <!-- Key Features -->
+      <section class="features">
+        <h2 class="section-title">Key Features</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-search"></i></div>
+            <h3>Search Data</h3>
+            <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-images"></i></div>
+            <h3>Photo Gallery</h3>
+            <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-users"></i></div>
+            <h3>Complete Records</h3>
+            <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="stats">
+        <div class="stat-item">
+          <h3 class="stat-number">10K+</h3>
+          <p class="stat-label">Records</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">50+</h3>
+          <p class="stat-label">Zones Covered</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">100%</h3>
+          <p class="stat-label">Accuracy</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">24/7</h3>
+          <p class="stat-label">Access</p>
+        </div>
+      </section>
+    </section>
+
+    <!-- =================== SEARCH DATA VIEW =================== -->
+    <section id="search-view" class="view-section hidden">
+      <div class="container py-5">
+        <h2 class="text-center mb-5">Search Records</h2>
+
+        <div class="ministry-toggle text-center mb-4">
           <button onclick="setMinistry('campus')" class="ministry-btn active">BLW Campus Ministry</button>
           <button onclick="setMinistry('church')" class="ministry-btn">Christ Embassy Church Ministry</button>
         </div>
 
-        <div class="search-bar">
-          <input type="text" id="search-input-hero" placeholder="Search by name or KC ID" onkeyup="performSearch()">
+        <div class="search-bar mx-auto" style="max-width:600px;">
+          <input type="text" id="search-input" placeholder="Search by name or KC ID..." onkeyup="performSearch()">
           <button onclick="performSearch()">
             <i class="fas fa-search"></i>
           </button>
         </div>
+
+        <div class="row g-4 mt-5" id="results-grid"></div>
       </div>
     </section>
 
-    <!-- Results Section -->
-    <section id="results-section" class="results-section" style="display:none;">
-      <div class="container">
-        <div class="row g-4" id="results-grid"></div>
-      </div>
-    </section>
+    <!-- =================== NEWSLETTER VIEW =================== -->
+    <section id="newsletter-view" class="view-section hidden py-5">
+      <div class="container text-center">
+        <h2 class="mb-4">Newsletter</h2>
+        <p class="lead mb-5">Stay updated with the latest news, updates, and announcements from ROR Partnership Datahub.</p>
+        
+        <div class="card mx-auto" style="max-width:600px;">
+          <div class="card-body">
+            <h4 class="card-title">Subscribe to our Newsletter</h4>
+            <p class="card-text">Get the latest partnership updates directly in your inbox.</p>
+            <form class="mt-4">
+              <div class="mb-3">
+                <input type="email" class="form-control" placeholder="Enter your email address" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+            </form>
+            <p class="mt-3 text-muted small">We respect your privacy. Unsubscribe anytime.</p>
+          </div>
+        </div>
 
-    <section class="features">
-      <h2 class="section-title">Key Features</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fas fa-search"></i></div>
-          <h3>Search Data</h3>
-          <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
+        <!-- You can add recent newsletter previews here later -->
+        <div class="mt-5">
+          <h5>Coming Soon: Latest Newsletter Archive</h5>
+          <p>Check back for past editions and updates!</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fas fa-images"></i></div>
-          <h3>Photo Gallery</h3>
-          <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fas fa-users"></i></div>
-          <h3>Complete Records</h3>
-          <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="stats">
-      <div class="stat-item">
-        <h3 class="stat-number">10K+</h3>
-        <p class="stat-label">Records</p>
-      </div>
-      <div class="stat-item">
-        <h3 class="stat-number">50+</h3>
-        <p class="stat-label">Zones Covered</p>
-      </div>
-      <div class="stat-item">
-        <h3 class="stat-number">100%</h3>
-        <p class="stat-label">Accuracy</p>
-      </div>
-      <div class="stat-item">
-        <h3 class="stat-number">24/7</h3>
-        <p class="stat-label">Access</p>
       </div>
     </section>
   </main>
@@ -130,6 +181,33 @@
     let currentIndex = 0;
     let currentName = '';
 
+    // ================== VIEW SWITCHING ==================
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const view = link.getAttribute('data-view');
+        
+        // Remove active class from all links
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'active-view'));
+        link.classList.add('active', 'active-view');
+
+        // Hide all sections
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+
+        // Show selected section
+        const sectionId = view + '-view';
+        const section = document.getElementById(sectionId);
+        if (section) {
+          section.classList.remove('hidden');
+        }
+
+        // Reset search when switching views
+        if (view !== 'search-data') {
+          document.getElementById('results-section').style.display = 'none';
+        }
+      });
+    });
+
     function setMinistry(ministry) {
       currentMinistry = ministry;
       document.querySelectorAll('.ministry-btn').forEach(btn => btn.classList.remove('active'));
@@ -138,16 +216,17 @@
     }
 
     function performSearch() {
-      const query = document.getElementById('search-input-hero').value.trim();
+      const input = document.getElementById('search-input-hero') || document.getElementById('search-input');
+      const query = input.value.trim();
+
       if (query.length < 2) {
-        document.getElementById('results-section').style.display = 'none';
+        document.getElementById('results-grid').innerHTML = '';
         return;
       }
 
       fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
         .then(res => res.json())
         .then(data => {
-          document.getElementById('results-section').style.display = 'block';
           renderResults(data);
         })
         .catch(err => console.error(err));
@@ -187,7 +266,7 @@
                 
                 ${photoCount > 1 ? `<small class="text-primary">📸 Tap to view all ${photoCount} photos</small>` : ''}
 
-                <!-- Share & Copy Buttons (ONLY ADDED HERE) -->
+                <!-- Share & Copy Buttons -->
                 <div class="d-flex justify-content-center gap-2 mt-3">
                   <button class="btn btn-success btn-sm" 
                           onclick="event.stopPropagation(); shareViaWhatsApp('${person.name.replace(/'/g, "\\'")}', '${(person.designation || '').replace(/'/g, "\\'")}', '${(person.kc_id || '').replace(/'/g, "\\'")}', '${(person.zone || person.blw_zone || '').replace(/'/g, "\\'")}', '${(person.group || '').replace(/'/g, "\\'")}', '${(person.chapter || person.church || '').replace(/'/g, "\\'")}', '${person.photo}', '${currentMinistry}')">
@@ -242,7 +321,7 @@
       if (e.key === 'Escape') closeGallery();
     });
 
-    // ================== SHARE FUNCTIONS (ONLY ADDED HERE) ==================
+    // ================== SHARE FUNCTIONS ==================
     function shareViaWhatsApp(name, designation, kcid, zone, group, chapter, photoUrl, ministry) {
       const ministryName = ministry === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry';
       
