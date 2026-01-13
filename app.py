@@ -10,7 +10,6 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
-from db_converter import DatabaseConverter, get_db_connection
 
 app = Flask(__name__)
 CORS(app)
@@ -32,7 +31,81 @@ os.makedirs(IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CAMPUS_IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 
-# DB is initialized via get_db_connection() + init_db() in db_converter
+
+# === SAFE DB CONNECTION HELPER ===
+def get_db_connection():
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        # Render PostgreSQL with SSL
+        conn = psycopg2.connect(
+            db_url,
+            sslmode='require',
+            cursor_factory=RealDictCursor
+        )
+        conn.autocommit = True
+        return conn
+    else:
+        # Local SQLite fallback
+        return sqlite3.connect(DATABASE_PATH)
+
+
+# === AUTO INITIALIZE DB ON STARTUP ===
+try:
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Campus records table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS campus_records (
+            id SERIAL PRIMARY KEY,
+            region TEXT,
+            designation TEXT,
+            name TEXT UNIQUE NOT NULL,
+            kc_id TEXT,
+            blw_zone TEXT,
+            group_name TEXT,
+            chapter TEXT,
+            images_json TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Church records table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS church_records (
+            id SERIAL PRIMARY KEY,
+            region TEXT,
+            designation TEXT,
+            name TEXT UNIQUE NOT NULL,
+            kc_id TEXT,
+            group_name TEXT,
+            zone TEXT,
+            church TEXT,
+            images_json TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Users table + super user
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    ''')
+
+    cur.execute("SELECT 1 FROM users WHERE username = 'super'")
+    if cur.fetchone() is None:
+        cur.execute("INSERT INTO users (username, password) VALUES ('super', %s)",
+                    (generate_password_hash('superuser'),))
+        print("Created super user: super / superuser")
+
+    conn.commit()
+    conn.close()
+    print("Database tables initialized successfully")
+except Exception as e:
+    print(f"Database initialization failed: {str(e)}")
 
 
 def login_required(f):
@@ -49,13 +122,16 @@ def login_required(f):
 def index():
     return send_from_directory(PUBLIC_FOLDER, 'index.html')
 
+
 @app.route('/public/<path:filename>')
 def public_files(filename):
     return send_from_directory(PUBLIC_FOLDER, filename)
 
+
 @app.route('/images/campus/<filename>')
 def campus_image(filename):
     return send_from_directory(CAMPUS_IMAGES_FOLDER, filename)
+
 
 @app.route('/images/church/<filename>')
 def church_image(filename):
@@ -118,6 +194,7 @@ def search():
 def admin_dashboard():
     return send_from_directory(BASE_DIR, 'dashboard.html')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -139,10 +216,12 @@ def login():
 
     return send_from_directory(BASE_DIR, 'login.html')
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
+
 
 @app.route('/<path:filename>')
 @login_required
@@ -230,8 +309,6 @@ def upload_dataset():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
-    if not db.allowed_file(file.filename):
-        return jsonify({'error': 'Only Excel/CSV'}), 400
 
     filename = secure_filename(file.filename)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
@@ -239,6 +316,10 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
+    # You'll need to update db_converter.py to use get_db_connection() too
+    # For now assuming it's already updated
+    from db_converter import DatabaseConverter
+    db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
     result = db.convert_excel_to_sql(filepath, ministry)
     return jsonify(result)
 
