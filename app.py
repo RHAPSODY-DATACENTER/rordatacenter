@@ -246,7 +246,7 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA - FULL STATS FOR VISUALIZATION ===============
+# =============== DASHBOARD DATA - FIXED FOR POSTGRES & VISUALIZATION ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -254,19 +254,27 @@ def dashboard_data():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Total records
-        cur.execute(f"SELECT COUNT(*) FROM {table}")
-        total_records = cur.fetchone()[0]
+        # Helper for single-value queries (Postgres dict vs SQLite tuple)
+        def fetch_one(query):
+            cur.execute(query)
+            row = cur.fetchone()
+            if row is None:
+                return 0
+            if isinstance(row, dict):  # Postgres
+                return list(row.values())[0]
+            return row[0]  # SQLite tuple
 
-        # Unique regions
-        cur.execute(f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''")
-        unique_regions = cur.fetchone()[0]
+        total_records = fetch_one(f"SELECT COUNT(*) FROM {table}")
 
-        # Unique zones
-        cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
-        unique_zones = cur.fetchone()[0]
+        unique_regions = fetch_one(
+            f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''"
+        )
 
-        # Top 10 regions
+        unique_zones = fetch_one(
+            f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''"
+        )
+
+        # Top regions
         cur.execute(f"""
             SELECT region, COUNT(*) as count
             FROM {table}
@@ -275,9 +283,9 @@ def dashboard_data():
             ORDER BY count DESC
             LIMIT 10
         """)
-        regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
+        regions = [{"region": r['region'] or "Unknown", "count": r['count']} for r in cur.fetchall()]
 
-        # Top 10 zones
+        # Top zones
         cur.execute(f"""
             SELECT {zone_col}, COUNT(*) as count
             FROM {table}
@@ -286,9 +294,9 @@ def dashboard_data():
             ORDER BY count DESC
             LIMIT 10
         """)
-        zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
+        zones = [{"zone": z[zone_col] or "Unknown", "count": z['count']} for z in cur.fetchall()]
 
-        # Top 10 designations
+        # Top designations
         cur.execute(f"""
             SELECT designation, COUNT(*) as count
             FROM {table}
@@ -297,7 +305,7 @@ def dashboard_data():
             ORDER BY count DESC
             LIMIT 10
         """)
-        designations = [{"designation": d[0] or "Unknown", "count": d[1]} for d in cur.fetchall()]
+        designations = [{"designation": d['designation'] or "Unknown", "count": d['count']} for d in cur.fetchall()]
 
         conn.close()
 
