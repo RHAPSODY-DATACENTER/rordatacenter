@@ -1,6 +1,8 @@
 # app.py
 import os
 import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import json
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
@@ -8,7 +10,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
-from db_converter import DatabaseConverter
+from db_converter import DatabaseConverter, get_db_connection
 
 app = Flask(__name__)
 CORS(app)
@@ -30,10 +32,7 @@ os.makedirs(IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CAMPUS_IMAGES_FOLDER, exist_ok=True)
 os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 
-# Initialize DB safely (runs once when module is imported)
-db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
-db.init_db()
-db.add_images_json_column()
+# DB is initialized via get_db_connection() + init_db() in db_converter
 
 
 def login_required(f):
@@ -63,7 +62,7 @@ def church_image(filename):
     return send_from_directory(CHURCH_IMAGES_FOLDER, filename)
 
 
-# =============== SEARCH API - BOTH MINISTRIES (FULL FIELDS) ===============
+# =============== SEARCH API - BOTH MINISTRIES ===============
 @app.route('/api/search')
 def search():
     query = request.args.get('q', '').strip().lower()
@@ -75,38 +74,38 @@ def search():
     table = 'campus_records' if ministry == 'campus' else 'church_records'
 
     results = []
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cur = conn.cursor()
 
     if ministry == 'campus':
         cur.execute(f"""
             SELECT name, designation, images_json, kc_id, region, blw_zone, group_name, chapter
             FROM {table}
-            WHERE LOWER(name) LIKE ? OR LOWER(kc_id) LIKE ?
+            WHERE LOWER(name) LIKE %s OR LOWER(kc_id) LIKE %s
             ORDER BY name
         """, (f'%{query}%', f'%{query}%'))
     else:
         cur.execute(f"""
             SELECT name, designation, images_json, kc_id, region, zone, group_name, church
             FROM {table}
-            WHERE LOWER(name) LIKE ? OR LOWER(kc_id) LIKE ?
+            WHERE LOWER(name) LIKE %s OR LOWER(kc_id) LIKE %s
             ORDER BY name
         """, (f'%{query}%', f'%{query}%'))
 
     for row in cur.fetchall():
-        all_photos = json.loads(row[2]) if row[2] else []
+        all_photos = json.loads(row['images_json']) if row['images_json'] else []
         main_photo = all_photos[0] if all_photos else '/public/default-photo.jpg'
 
         results.append({
-            'name': row[0],
-            'designation': row[1] or '',
+            'name': row['name'],
+            'designation': row['designation'] or '',
             'photo': main_photo,
             'all_photos': all_photos,
-            'kc_id': row[3] or '',
-            'region': row[4] or '',
-            'zone': row[5] or '',
-            'group': row[6] or '',
-            'chapter': row[7] or ''  # chapter for campus, church for church
+            'kc_id': row['kc_id'] or '',
+            'region': row['region'] or '',
+            'zone': row['blw_zone'] if ministry == 'campus' else row['zone'] or '',
+            'group': row['group_name'] or '',
+            'chapter': row['chapter'] if ministry == 'campus' else row['church'] or ''
         })
 
     conn.close()
@@ -124,13 +123,13 @@ def login():
     if request.method == 'POST':
         username = request.form['username'].strip()
         password = request.form['password']
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, password FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT id, password FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         conn.close()
 
-        if user and check_password_hash(user[1], password):
+        if user and check_password_hash(user['password'], password):
             session['logged_in'] = True
             return redirect(request.args.get('next') or '/admin')
         else:
@@ -156,22 +155,18 @@ def admin_files(filename):
 @login_required
 def dashboard_data():
     def get_ministry_stats(table, zone_col='blw_zone'):
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = get_db_connection()
         cur = conn.cursor()
 
-        # Total records
         cur.execute(f"SELECT COUNT(*) FROM {table}")
         total_records = cur.fetchone()[0]
 
-        # Unique regions
         cur.execute(f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''")
         unique_regions = cur.fetchone()[0]
 
-        # Unique zones
         cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
         unique_zones = cur.fetchone()[0]
 
-        # Top 10 regions
         cur.execute(f"""
             SELECT region, COUNT(*) as count
             FROM {table}
@@ -182,7 +177,6 @@ def dashboard_data():
         """)
         regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
 
-        # Top 10 zones
         cur.execute(f"""
             SELECT {zone_col}, COUNT(*) as count
             FROM {table}
@@ -193,7 +187,6 @@ def dashboard_data():
         """)
         zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
 
-        # Top 10 designations
         cur.execute(f"""
             SELECT designation, COUNT(*) as count
             FROM {table}
@@ -224,7 +217,7 @@ def dashboard_data():
     })
 
 
-# =============== UPLOAD DATASET - MINISTRY CHOICE ===============
+# =============== UPLOAD DATASET ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
@@ -250,7 +243,7 @@ def upload_dataset():
     return jsonify(result)
 
 
-# =============== UPLOAD IMAGE - MINISTRY CHOICE + SEPARATE FOLDERS ===============
+# =============== UPLOAD IMAGE ===============
 @app.route('/api/upload-image', methods=['POST'])
 @login_required
 def upload_image():
@@ -272,15 +265,15 @@ def upload_image():
     if not name:
         return jsonify({'success': False, 'error': 'Name required'}), 400
 
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT images_json FROM {table} WHERE TRIM(LOWER(name)) = TRIM(LOWER(?))", (name,))
+    cur.execute(f"SELECT images_json FROM {table} WHERE LOWER(name) = LOWER(%s)", (name,))
     row = cur.fetchone()
     if not row:
         conn.close()
         return jsonify({'success': False, 'error': 'Name not found'}), 404
 
-    current = json.loads(row[0]) if row[0] else []
+    current = json.loads(row['images_json']) if row['images_json'] else []
 
     saved_paths = []
     for file in valid_files:
@@ -298,7 +291,7 @@ def upload_image():
     all_images = current + saved_paths
     final_images = all_images[-4:]
 
-    cur.execute(f"UPDATE {table} SET images_json = ? WHERE TRIM(LOWER(name)) = LOWER(?)",
+    cur.execute(f"UPDATE {table} SET images_json = %s WHERE LOWER(name) = LOWER(%s)",
                 (json.dumps(final_images), name))
     conn.commit()
     conn.close()
@@ -306,7 +299,7 @@ def upload_image():
     return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s) to {ministry} ministry'})
 
 
-# =============== ADD RECORD - MINISTRY CHOICE ===============
+# =============== ADD RECORD ===============
 @app.route('/api/add-record', methods=['POST'])
 @login_required
 def add_record():
@@ -320,7 +313,7 @@ def add_record():
         if not name:
             return jsonify({'success': False, 'error': 'Name required'}), 400
 
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = get_db_connection()
         cur = conn.cursor()
         table = 'campus_records' if ministry == 'campus' else 'church_records'
 
@@ -328,7 +321,8 @@ def add_record():
             cur.execute(f'''
                 INSERT INTO {table} 
                 (region, designation, name, kc_id, blw_zone, group_name, chapter)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (name) DO NOTHING
             ''', (
                 data.get('region', ''),
                 data.get('designation', ''),
@@ -342,7 +336,8 @@ def add_record():
             cur.execute(f'''
                 INSERT INTO {table} 
                 (region, designation, name, kc_id, group_name, zone, church)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (name) DO NOTHING
             ''', (
                 data.get('region', ''),
                 data.get('designation', ''),
@@ -355,8 +350,6 @@ def add_record():
         conn.commit()
         conn.close()
         return jsonify({'success': True, 'message': 'Record added'})
-    except sqlite3.IntegrityError:
-        return jsonify({'success': False, 'error': 'Name already exists'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
