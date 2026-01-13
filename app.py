@@ -35,26 +35,35 @@ os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 # === SAFE DB CONNECTION HELPER ===
 def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
-    if db_url:
-        # Render PostgreSQL with SSL
-        conn = psycopg2.connect(
-            db_url,
-            sslmode='require',
-            cursor_factory=RealDictCursor
-        )
-        conn.autocommit = True
-        return conn
-    else:
-        # Local SQLite fallback
-        return sqlite3.connect(DATABASE_PATH)
+    print(f"[DEBUG] DATABASE_URL: {'present (starts with ' + db_url[:10] + '...' if db_url else 'missing'}")
+
+    if db_url and db_url.startswith('postgres://'):
+        print("[DEBUG] Using PostgreSQL")
+        try:
+            conn = psycopg2.connect(
+                db_url,
+                sslmode='require',
+                cursor_factory=RealDictCursor
+            )
+            conn.autocommit = True
+            print("[DEBUG] Postgres connection successful")
+            return conn
+        except Exception as e:
+            print(f"[ERROR] Postgres connection failed: {str(e)}")
+            # Continue to SQLite fallback if needed
+
+    print("[DEBUG] Falling back to local SQLite")
+    return sqlite3.connect(DATABASE_PATH)
 
 
-# === AUTO INITIALIZE DB ON STARTUP ===
+# === AUTO INITIALIZE DB ON STARTUP (SAFE) ===
+print("[STARTUP] Initializing database...")
 try:
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Campus records table
+    # Create tables
+    print("[STARTUP] Creating/verifying tables...")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS campus_records (
             id SERIAL PRIMARY KEY,
@@ -70,7 +79,6 @@ try:
         )
     ''')
 
-    # Church records table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS church_records (
             id SERIAL PRIMARY KEY,
@@ -86,7 +94,6 @@ try:
         )
     ''')
 
-    # Users table + super user
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -95,17 +102,23 @@ try:
         )
     ''')
 
+    # Super user
+    print("[STARTUP] Checking super user...")
     cur.execute("SELECT 1 FROM users WHERE username = 'super'")
     if cur.fetchone() is None:
-        cur.execute("INSERT INTO users (username, password) VALUES ('super', %s)",
-                    (generate_password_hash('superuser'),))
-        print("Created super user: super / superuser")
+        hashed = generate_password_hash('superuser')
+        cur.execute("INSERT INTO users (username, password) VALUES ('super', %s)", (hashed,))
+        print("[STARTUP] Super user created")
+    else:
+        print("[STARTUP] Super user already exists")
 
     conn.commit()
-    conn.close()
-    print("Database tables initialized successfully")
+    print("[STARTUP] Database initialized successfully")
 except Exception as e:
-    print(f"Database initialization failed: {str(e)}")
+    print(f"[STARTUP] Database initialization error: {str(e)}")
+finally:
+    if 'conn' in locals():
+        conn.close()
 
 
 def login_required(f):
@@ -138,7 +151,7 @@ def church_image(filename):
     return send_from_directory(CHURCH_IMAGES_FOLDER, filename)
 
 
-# =============== SEARCH API - BOTH MINISTRIES ===============
+# =============== SEARCH API ===============
 @app.route('/api/search')
 def search():
     query = request.args.get('q', '').strip().lower()
@@ -168,7 +181,8 @@ def search():
             ORDER BY name
         """, (f'%{query}%', f'%{query}%'))
 
-    for row in cur.fetchall():
+    rows = cur.fetchall()
+    for row in rows:
         all_photos = json.loads(row['images_json']) if row['images_json'] else []
         main_photo = all_photos[0] if all_photos else '/public/default-photo.jpg'
 
@@ -229,7 +243,7 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA - FULL REAL STATS ===============
+# =============== DASHBOARD DATA ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -316,8 +330,7 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # You'll need to update db_converter.py to use get_db_connection() too
-    # For now assuming it's already updated
+    # Use your db_converter (assume it's updated too)
     from db_converter import DatabaseConverter
     db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
     result = db.convert_excel_to_sql(filepath, ministry)
