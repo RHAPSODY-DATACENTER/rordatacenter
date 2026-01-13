@@ -57,6 +57,27 @@
     .result { margin-top: 30px; text-align: center; font-weight: bold; font-size: 1.2rem; }
     .success { color: green; }
     .error { color: red; }
+    #name-suggestions {
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      display: none;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .suggestion-item {
+      padding: 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      transition: background 0.3s;
+    }
+    .suggestion-item:hover {
+      background: #f0f0f0;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -66,13 +87,14 @@
   <h1>Upload Up to 4 Photos</h1>
 
   <form id="uploadForm" enctype="multipart/form-data">
-    <select name="ministry" required>
+    <select name="ministry" id="ministry-select" required>
       <option value="">-- Select Ministry --</option>
       <option value="campus">BLW Campus Ministry</option>
       <option value="church">Christ Embassy Church Ministry</option>
     </select>
 
-    <input type="text" name="name" placeholder="Full Name (Exact Match Required)" required>
+    <input type="text" name="name" id="name-input" placeholder="Full Name (Exact Match Required)" required>
+    <div id="name-suggestions"></div>
 
     <div class="upload-area">
       <h3>Drop up to 4 images here</h3>
@@ -115,6 +137,55 @@
       ? '<span class="success">' + data.message + '</span>'
       : '<span class="error">Error: ' + data.error + '</span>';
   };
+
+  // Autocomplete for name input
+  const nameInput = document.getElementById('name-input');
+  const suggestionsDiv = document.getElementById('name-suggestions');
+  const ministrySelect = document.getElementById('ministry-select');
+
+  nameInput.addEventListener('input', async function() {
+    const query = this.value.trim();
+    const ministry = ministrySelect.value;
+
+    if (query.length < 2 || !ministry) {
+      suggestionsDiv.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministry}`);
+      const data = await res.json();
+
+      suggestionsDiv.innerHTML = '';
+      if (data.length === 0) {
+        suggestionsDiv.style.display = 'none';
+        return;
+      }
+
+      data.forEach(person => {
+        const item = document.createElement('div');
+        item.classList.add('suggestion-item');
+        item.textContent = person.name;
+        item.onclick = () => {
+          nameInput.value = person.name;
+          suggestionsDiv.style.display = 'none';
+        };
+        suggestionsDiv.appendChild(item);
+      });
+
+      suggestionsDiv.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      suggestionsDiv.style.display = 'none';
+    }
+  });
+
+  // Hide suggestions on click outside
+  document.addEventListener('click', e => {
+    if (e.target !== nameInput) {
+      suggestionsDiv.style.display = 'none';
+    }
+  });
 </script>
 
 </body>
