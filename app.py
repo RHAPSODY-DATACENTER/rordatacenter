@@ -35,10 +35,10 @@ os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 # === SAFE DB CONNECTION HELPER ===
 def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
-    print(f"[DB] Raw DATABASE_URL: {db_url[:60] if db_url else 'MISSING'}...")
+    print(f"[DB DEBUG] Raw DATABASE_URL: {db_url[:60] if db_url else 'MISSING'}...")
 
     if db_url and ('postgres://' in db_url or 'postgresql://' in db_url):
-        print("[DB] Detected Postgres URL - connecting...")
+        print("[DB DEBUG] Detected Postgres URL - attempting connection...")
         try:
             conn = psycopg2.connect(
                 db_url,
@@ -46,18 +46,17 @@ def get_db_connection():
                 cursor_factory=RealDictCursor
             )
             conn.autocommit = True
-            print("[DB] Postgres connection SUCCESS")
+            print("[DB DEBUG] Postgres connection SUCCESS")
             return conn
         except Exception as e:
             print(f"[DB ERROR] Postgres connection failed: {str(e)}")
-            # Fallback only if connection truly fails
 
-    print("[DB] Falling back to local SQLite")
+    print("[DB DEBUG] Falling back to local SQLite")
     return sqlite3.connect(DATABASE_PATH)
 
 
 # === AUTO INITIALIZE DB ON STARTUP ===
-print("[STARTUP] Starting database initialization...")
+print("[STARTUP] Initializing database...")
 try:
     conn = get_db_connection()
     print("[STARTUP] Connection obtained")
@@ -247,7 +246,7 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA ===============
+# =============== DASHBOARD DATA - FULL STATS FOR VISUALIZATION ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -255,16 +254,19 @@ def dashboard_data():
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # Total records
         cur.execute(f"SELECT COUNT(*) FROM {table}")
         total_records = cur.fetchone()[0]
 
+        # Unique regions
         cur.execute(f"SELECT COUNT(DISTINCT region) FROM {table} WHERE region IS NOT NULL AND region != ''")
         unique_regions = cur.fetchone()[0]
 
+        # Unique zones
         cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
         unique_zones = cur.fetchone()[0]
 
-        placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+        # Top 10 regions
         cur.execute(f"""
             SELECT region, COUNT(*) as count
             FROM {table}
@@ -275,6 +277,7 @@ def dashboard_data():
         """)
         regions = [{"region": r[0] or "Unknown", "count": r[1]} for r in cur.fetchall()]
 
+        # Top 10 zones
         cur.execute(f"""
             SELECT {zone_col}, COUNT(*) as count
             FROM {table}
@@ -285,6 +288,7 @@ def dashboard_data():
         """)
         zones = [{"zone": z[0] or "Unknown", "count": z[1]} for z in cur.fetchall()]
 
+        # Top 10 designations
         cur.execute(f"""
             SELECT designation, COUNT(*) as count
             FROM {table}
@@ -335,7 +339,6 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # Assuming db_converter is updated to use get_db_connection()
     from db_converter import DatabaseConverter
     db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
     result = db.convert_excel_to_sql(filepath, ministry)
