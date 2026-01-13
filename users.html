@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Users Dashboard</title>
+  <link rel="stylesheet" href="css_file/style.css" />
+</head>
+<body>
+
+<!-- REUSE NAVBAR -->
+<div class="nav">
+  <div class="brand">GPD PORTAL</div>
+  <nav>
+    <a href="dashboard.html">Home</a>
+
+    <details style="display:inline-block; position:relative;">
+      <summary style="list-style:none; cursor:pointer; color:white;">
+        Settings
+      </summary>
+
+      <div style="
+        position:absolute;
+        right:0;
+        top:35px;
+        background:white;
+        border-radius:6px;
+        box-shadow:0 6px 14px rgba(0,0,0,0.15);
+        min-width:160px;
+        overflow:hidden;
+        z-index:1000;
+      ">
+        <a href="assign_user.html" style="display:block; padding:12px; color:#003366; text-decoration:none;">➕ Create User</a>
+        <a href="users.html" style="display:block; padding:12px; color:#003366; text-decoration:none;">👥 Users</a>
+      </div>
+    </details>
+  </nav>
+</div>
+
+<div style="height:20px;"></div>
+
+<!-- USERS TABLE -->
+<div class="dashboard-container">
+  <a href="dashboard.html" class="back">← Back</a>
+  <h1 style="text-align:center; color:#003366;">Users Dashboard</h1>
+
+  <table class="users-table" style="margin-top:30px; width:100%; text-align:center;">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Password</th>
+        <th>Role</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <!-- Replace with server-generated rows later -->
+      <tr>
+        <td>john_doe</td>
+        <td>password123</td>
+        <td>User</td>
+        <td><button class="delete-btn">Delete</button></td>
+      </tr>
+
+      <tr>
+        <td>admin_master</td>
+        <td>admin@543</td>
+        <td>Super User</td>
+        <td><button class="delete-btn">Delete</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

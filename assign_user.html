@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Assign User – GPD Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css_file/style.css">
+</head>
+
+<body style="background: linear-gradient(135deg,#0b2c5d,#355fbd); display:flex; align-items:center; justify-content:center; height:100vh;">
+<a href="dashboard.html" style="
+  position:fixed;
+  top:20px;
+  left:20px;
+  color:whitesmoke;
+  font-weight:bold;
+  text-decoration:none;
+  font-size:16px;
+">
+  ← Back
+</a>
+
+<div style="
+  background:white;
+  width:380px;
+  border-radius:20px;
+  padding:40px;
+  text-align:center;
+  box-shadow:0 18px 45px rgba(0,0,0,0.25);
+">
+
+  <h2 style="color:#003366; margin-bottom:30px;">GPD Admin Portal</h2>
+
+  <input type="text" placeholder="Username" style="
+    width:100%;
+    padding:14px;
+    margin-bottom:18px;
+    border-radius:12px;
+    border:1px solid #ddd;
+    outline:none;
+    font-size:15px;
+  ">
+
+  <div style="position:relative; margin-bottom:18px;">
+  <input id="passwordField" type="password" placeholder="Password" style="
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:1px solid #ddd;
+    outline:none;
+    font-size:15px;
+  ">
+
+  <span id="eyeIcon" onclick="togglePassword()" style="
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    cursor:pointer;
+    font-size:18px;
+    color:#555;
+  ">👁</span>
+</div>
+
+
+  <select style="
+    width:100%;
+    padding:14px;
+    margin-bottom:24px;
+    border-radius:12px;
+    border:1px solid #ddd;
+    font-size:15px;
+    outline:none;
+  ">
+    <option value="">Select Role</option>
+    <option>Super User</option>
+    <option>User</option>
+  </select>
+
+  <button style="
+    width:100%;
+    background:#003366;
+    color:white;
+    border:none;
+    padding:14px;
+    border-radius:30px;
+    font-size:16px;
+    cursor:pointer;
+  ">
+    Assign User
+  </button>
+
+</div>
+</div>
+
+<script>
+function togglePassword(){
+  const input = document.getElementById("passwordField");
+  const eye = document.getElementById("eyeIcon");
+
+  if(input.type === "password"){
+    input.type = "text";
+    eye.textContent = "🙈";
+  } else {
+    input.type = "password";
+    eye.textContent = "👁";
+  }
+}
+</script>
+
+</body>
+</html>

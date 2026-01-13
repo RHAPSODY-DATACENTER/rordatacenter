@@ -17,9 +17,42 @@
   </style>
 </head>
 <body>
+<!-- STEP 1: NAVBAR GOES HERE -->
+<div class="nav">
+  <div class="brand">GPD PORTAL</div>
+
+  <nav>
+    <a href="dashboard.html">Home</a>
+
+    <!-- SETTINGS DROPDOWN -->
+    <details style="display:inline-block; position:relative;">
+      <summary style="list-style:none; cursor:pointer; color:white;">
+        Settings
+      </summary>
+
+      <div style="
+        position:absolute;
+        right:0;
+        top:35px;
+        background:white;
+        border-radius:6px;
+        box-shadow:0 6px 14px rgba(0,0,0,0.15);
+        min-width:160px;
+        overflow:hidden;
+        z-index:1000;
+      ">
+        <a href="assign_user.html" style="display:block; padding:12px; color:#003366; text-decoration:none;">➕ Create User</a>
+        <a href="users.html" style="display:block; padding:12px; color:#003366; text-decoration:none;">👥 Users</a>
+      </div>
+    </details>
+  </nav>
+</div>
+<div style="height:20px;"></div>
+
   <div class="dashboard-container">
     <a href="/logout" class="back">Logout</a>
-    <h1 style="text-align:center; color:#003366;">GPD Admin Dashboard</h1>
+    <a href="assign_user.html" class="back">← Back</a>
+<h1 style="text-align:center; color:#003366;">GPD Admin Dashboard</h1>
 
     <div class="stats-grid" id="stats"></div>
 
