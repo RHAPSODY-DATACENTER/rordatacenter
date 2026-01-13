@@ -35,10 +35,10 @@ os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 # === SAFE DB CONNECTION HELPER ===
 def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
-    print(f"[DEBUG] DATABASE_URL: {'present (starts with ' + db_url[:10] + '...' if db_url else 'missing'}")
+    print(f"[DB] Raw DATABASE_URL: {db_url[:60] if db_url else 'MISSING'}...")
 
-    if db_url and db_url.startswith('postgres://'):
-        print("[DEBUG] Using PostgreSQL")
+    if db_url and ('postgres://' in db_url or 'postgresql://' in db_url):
+        print("[DB] Detected Postgres URL - connecting...")
         try:
             conn = psycopg2.connect(
                 db_url,
@@ -46,23 +46,23 @@ def get_db_connection():
                 cursor_factory=RealDictCursor
             )
             conn.autocommit = True
-            print("[DEBUG] Postgres connection successful")
+            print("[DB] Postgres connection SUCCESS")
             return conn
         except Exception as e:
-            print(f"[ERROR] Postgres connection failed: {str(e)}")
-            # Continue to SQLite fallback if needed
+            print(f"[DB ERROR] Postgres connection failed: {str(e)}")
+            # Fallback only if connection truly fails
 
-    print("[DEBUG] Falling back to local SQLite")
+    print("[DB] Falling back to local SQLite")
     return sqlite3.connect(DATABASE_PATH)
 
 
-# === AUTO INITIALIZE DB ON STARTUP (SAFE) ===
-print("[STARTUP] Initializing database...")
+# === AUTO INITIALIZE DB ON STARTUP ===
+print("[STARTUP] Starting database initialization...")
 try:
     conn = get_db_connection()
+    print("[STARTUP] Connection obtained")
     cur = conn.cursor()
 
-    # Create tables
     print("[STARTUP] Creating/verifying tables...")
     cur.execute('''
         CREATE TABLE IF NOT EXISTS campus_records (
@@ -102,7 +102,6 @@ try:
         )
     ''')
 
-    # Super user
     print("[STARTUP] Checking super user...")
     cur.execute("SELECT 1 FROM users WHERE username = 'super'")
     if cur.fetchone() is None:
@@ -113,11 +112,11 @@ try:
         print("[STARTUP] Super user already exists")
 
     conn.commit()
-    print("[STARTUP] Database initialized successfully")
+    print("[STARTUP] Database initialization SUCCESS")
 except Exception as e:
-    print(f"[STARTUP] Database initialization error: {str(e)}")
+    print(f"[STARTUP] Database initialization FAILED: {str(e)}")
 finally:
-    if 'conn' in locals():
+    if 'conn' in locals() and conn:
         conn.close()
 
 
@@ -166,20 +165,23 @@ def search():
     conn = get_db_connection()
     cur = conn.cursor()
 
+    placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+    like_pattern = f'%{query}%'
+
     if ministry == 'campus':
         cur.execute(f"""
             SELECT name, designation, images_json, kc_id, region, blw_zone, group_name, chapter
             FROM {table}
-            WHERE LOWER(name) LIKE %s OR LOWER(kc_id) LIKE %s
+            WHERE LOWER(name) LIKE {placeholder} OR LOWER(kc_id) LIKE {placeholder}
             ORDER BY name
-        """, (f'%{query}%', f'%{query}%'))
+        """, (like_pattern, like_pattern))
     else:
         cur.execute(f"""
             SELECT name, designation, images_json, kc_id, region, zone, group_name, church
             FROM {table}
-            WHERE LOWER(name) LIKE %s OR LOWER(kc_id) LIKE %s
+            WHERE LOWER(name) LIKE {placeholder} OR LOWER(kc_id) LIKE {placeholder}
             ORDER BY name
-        """, (f'%{query}%', f'%{query}%'))
+        """, (like_pattern, like_pattern))
 
     rows = cur.fetchall()
     for row in rows:
@@ -216,7 +218,9 @@ def login():
         password = request.form['password']
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, password FROM users WHERE username = %s", (username,))
+
+        placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+        cur.execute(f"SELECT id, password FROM users WHERE username = {placeholder}", (username,))
         user = cur.fetchone()
         conn.close()
 
@@ -260,6 +264,7 @@ def dashboard_data():
         cur.execute(f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''")
         unique_zones = cur.fetchone()[0]
 
+        placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
         cur.execute(f"""
             SELECT region, COUNT(*) as count
             FROM {table}
@@ -330,7 +335,7 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # Use your db_converter (assume it's updated too)
+    # Assuming db_converter is updated to use get_db_connection()
     from db_converter import DatabaseConverter
     db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
     result = db.convert_excel_to_sql(filepath, ministry)
@@ -411,11 +416,12 @@ def add_record():
         cur = conn.cursor()
         table = 'campus_records' if ministry == 'campus' else 'church_records'
 
+        placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
         if ministry == 'campus':
             cur.execute(f'''
                 INSERT INTO {table} 
                 (region, designation, name, kc_id, blw_zone, group_name, chapter)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
                 ON CONFLICT (name) DO NOTHING
             ''', (
                 data.get('region', ''),
@@ -430,7 +436,7 @@ def add_record():
             cur.execute(f'''
                 INSERT INTO {table} 
                 (region, designation, name, kc_id, group_name, zone, church)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
                 ON CONFLICT (name) DO NOTHING
             ''', (
                 data.get('region', ''),
