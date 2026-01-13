@@ -28,237 +28,193 @@
     </button>
   </header>
 
-  <main id="app" class="container">
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section id="hero" class="hero-section">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <h1 class="hero-title">ROR PARTNERSHIP DATAHUB</h1>
+        <p class="hero-subtitle">Official Directory & Data Management System</p>
+        
+        <div class="ministry-toggle">
+          <button onclick="setMinistry('campus')" class="ministry-btn active">BLW Campus Ministry</button>
+          <button onclick="setMinistry('church')" class="ministry-btn">Christ Embassy Church Ministry</button>
+        </div>
 
-    <!-- HOME VIEW -->
-    <section id="home-view" class="view active">
-      <section class="hero">
-        <div class="hero-content">
-          <h1 class="hero-title">Welcome to ROR PARTNERSHIP DATAHUB</h1>
-          <p class="hero-subtitle">Streamlined Data Collection & Management Platform</p>
-          <div class="hero-buttons">
-            <button class="btn btn-primary" data-view="search-data">
-              <i class="fas fa-search"></i> Search Data
-            </button>
-          </div>
+        <div class="search-bar">
+          <input type="text" id="search-input-hero" placeholder="Search by name or KC ID" onkeyup="performSearch()">
+          <button onclick="performSearch()">
+            <i class="fas fa-search"></i>
+          </button>
         </div>
-      </section>
-
-      <section class="features">
-        <h2 class="section-title">Key Features</h2>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon"><i class="fas fa-search"></i></div>
-            <h3>Search Data</h3>
-            <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon"><i class="fas fa-images"></i></div>
-            <h3>Photo Gallery</h3>
-            <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon"><i class="fas fa-users"></i></div>
-            <h3>Complete Records</h3>
-            <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="stats">
-        <div class="stat-item">
-          <h3 class="stat-number">10K+</h3>
-          <p class="stat-label">Records</p>
-        </div>
-        <div class="stat-item">
-          <h3 class="stat-number">50+</h3>
-          <p class="stat-label">Zones Covered</p>
-        </div>
-        <div class="stat-item">
-          <h3 class="stat-number">100%</h3>
-          <p class="stat-label">Accuracy</p>
-        </div>
-        <div class="stat-item">
-          <h3 class="stat-number">24/7</h3>
-          <p class="stat-label">Access</p>
-        </div>
-      </section>
+      </div>
     </section>
 
-    <!-- SEARCH DATA VIEW -->
-    <section id="search-data-view" class="view">
-      <section class="dashboard-section search-dashboard">
-        <div class="search-inner">
-          <!-- Ministry Toggle -->
-          <div style="text-align:center; margin-bottom:30px;">
-            <button id="campus-btn" class="btn btn-primary" onclick="setMinistry('campus')">BLW Campus Ministry</button>
-            <button id="church-btn" class="btn" onclick="setMinistry('church')">Christ Embassy Church Ministry</button>
-          </div>
-
-          <div class="search-box">
-            <input 
-              id="search-input-hero" 
-              type="text" 
-              class="search-input-large" 
-              placeholder="Enter name, designation, zone, region, chapter, group or KC ID..." 
-              autocomplete="off"
-            >
-            <button id="search-btn-hero" class="btn btn-primary search-btn">
-              <i class="fas fa-search"></i> Search Now
-            </button>
-          </div>
-          <p style="text-align:center; margin-top:15px; color:#666;">
-            Type any part of the name, KC ID or title and click Search
-          </p>
-        </div>
-      </section>
-
-      <!-- SEARCH RESULTS WILL APPEAR HERE -->
-      <div id="search-results" style="min-height:200px;"></div>
+    <!-- Results Section -->
+    <section id="results-section" class="results-section" style="display:none;">
+      <div class="container">
+        <div class="row g-4" id="results-grid"></div>
+      </div>
     </section>
 
+    <!-- Key Features Section (unchanged) -->
+    <section class="features">
+      <h2 class="section-title">Key Features</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-search"></i></div>
+          <h3>Search Data</h3>
+          <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-images"></i></div>
+          <h3>Photo Gallery</h3>
+          <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fas fa-users"></i></div>
+          <h3>Complete Records</h3>
+          <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section (unchanged) -->
+    <section class="stats">
+      <div class="stat-item">
+        <h3 class="stat-number">10K+</h3>
+        <p class="stat-label">Records</p>
+      </div>
+      <div class="stat-item">
+        <h3 class="stat-number">50+</h3>
+        <p class="stat-label">Zones Covered</p>
+      </div>
+      <div class="stat-item">
+        <h3 class="stat-number">100%</h3>
+        <p class="stat-label">Accuracy</p>
+      </div>
+      <div class="stat-item">
+        <h3 class="stat-number">24/7</h3>
+        <p class="stat-label">Access</p>
+      </div>
+    </section>
   </main>
 
+  <!-- Gallery Modal -->
+  <div id="galleryModal" class="gallery-modal">
+    <span class="close-gallery" onclick="closeGallery()">&times;</span>
+    <div class="gallery-content">
+      <img id="galleryImg" src="" alt="Gallery Image">
+      <p id="galleryCaption"></p>
+      <button class="prev" onclick="prevImage()">&lt;</button>
+      <button class="next" onclick="nextImage()">&gt;</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
   <footer class="footer">
     <div class="footer-content">
-      <div class="footer-section">
-        <h4>ROR PARTNERSHIP DATAHUB</h4>
-        <p>Official Directory & Data Management System</p>
+      <h4>ROR PARTNERSHIP DATAHUB</h4>
+      <p>Official Directory & Data Management System</p>
+      <div class="social-icons">
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-facebook-f"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-linkedin-in"></i></a>
       </div>
-      <div class="footer-section">
-        <h4>Quick Links</h4>
-        <ul>
-          <li><a href="#" data-view="home">Home</a></li>
-          <li><a href="#" data-view="search-data">Search Records</a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4>Contact</h4>
-        <p>Email: info@gpdportal.com</p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      © 2026 ROR PARTNERSHIP DATAHUB· All rights reserved
+      <p>&copy; 2026 ROR PARTNERSHIP DATAHUB &middot; All rights reserved</p>
     </div>
   </footer>
 
-  <!-- FULL-SCREEN GALLERY MODAL -->
-  <div id="galleryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
-    <span style="position:absolute; top:20px; right:40px; color:white; font-size:50px; font-weight:bold; cursor:pointer;" onclick="closeGallery()">&times;</span>
-    <div style="position:absolute; top:50%; left:30px; transform:translateY(-50%); color:white; font-size:60px; cursor:pointer; opacity:0.7;" onclick="prevImage()">&#10094;</div>
-    <div style="position:absolute; top:50%; right:30px; transform:translateY(-50%); color:white; font-size:60px; cursor:pointer; opacity:0.7;" onclick="nextImage()">&#10095;</div>
-    <img id="galleryImg" style="max-width:90%; max-height:85vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.8);" src="" alt="Photo">
-    <div id="galleryCaption" style="color:white; font-size:1.3rem; margin-top:20px;"></div>
-  </div>
-
   <script>
-    // Navigation
-    document.querySelectorAll('[data-view]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const view = link.getAttribute('data-view');
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(view + '-view')?.classList.add('active');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-      });
-    });
-
-    // Mobile menu
-    document.querySelector('.menu-toggle')?.addEventListener('click', () => {
-      document.querySelector('.nav-menu').classList.toggle('open');
-    });
-
-    // Ministry toggle
     let currentMinistry = 'campus';
-
-    function setMinistry(ministry) {
-      currentMinistry = ministry;
-      document.getElementById('campus-btn').classList.toggle('btn-primary', ministry === 'campus');
-      document.getElementById('church-btn').classList.toggle('btn-primary', ministry === 'church');
-    }
- 
-    // Search
-    document.getElementById('search-btn-hero')?.addEventListener('click', performSearch);
-    document.getElementById('search-input-hero')?.addEventListener('keypress', e => {
-      if (e.key === 'Enter') performSearch();
-    });
-
-    function performSearch() {
-      const query = document.getElementById('search-input-hero').value.trim();
-      const resultsDiv = document.getElementById('search-results');
-
-      if (!query) {
-        resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Please enter a search term</p>`;
-        return;
-      }
-
-      resultsDiv.innerHTML = `<p style="text-align:center; padding:40px; color:#003366;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>`;
-
-      fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
-        .then(res => res.json())
-        .then(data => {
-          resultsDiv.innerHTML = '';
-
-          if (data.length === 0) {
-            resultsDiv.innerHTML = `
-              <div style="text-align:center; padding:60px; color:#666;">
-                <i class="fas fa-search" style="font-size:48px; color:#ddd; margin-bottom:20px;"></i>
-                <p style="font-size:1.3rem;">No results found for "<strong>${query}</strong>" in ${currentMinistry === 'campus' ? 'BLW Campus' : 'Christ Embassy Church'} Ministry</p>
-              </div>`;
-            return;
-          }
-
-          const grid = document.createElement('div');
-          grid.style.cssText = `
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
-            margin: 30px 0;
-            max-width: 1200px;
-            margin: 0 auto;
-          `;
-
-          data.forEach(person => {
-            const photoCount = person.all_photos.length;
-            grid.innerHTML += `
-              <div class="result-card" style="cursor:pointer;" onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
-                <img src="${person.photo}" 
-                     onerror="this.src='/public/default-photo.jpg'"
-                     style="width:150px; height:150px; object-fit:cover; border-radius:50%; border:5px solid #003366; margin-bottom:15px;">
-                <h3 style="color:#003366; margin:10px 0;">${person.name}</h3>
-                <p style="margin:8px 0; color:#444;"><strong>Designation:</strong> ${person.designation || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Zone:</strong> ${person.zone || person.blw_zone || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Region:</strong> ${person.region || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Group:</strong> ${person.group || person.group_name || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Chapter/Church:</strong> ${person.chapter || person.church || '—'}</p>
-                ${photoCount > 1 ? `<p style="margin-top:15px; color:#003366; font-weight:bold;">📸 Click to view all ${photoCount} photos</p>` : ''}
-              </div>
-            `;
-          });
-
-          resultsDiv.appendChild(grid);
-        })
-        .catch(err => {
-          console.error(err);
-          resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Error loading results. Please try again.</p>`;
-        });
-    }
-
-    // Gallery
     let currentPhotos = [];
     let currentIndex = 0;
     let currentName = '';
 
+    function setMinistry(ministry) {
+      currentMinistry = ministry;
+      document.querySelectorAll('.ministry-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[onclick="setMinistry('${ministry}')"]`).classList.add('active');
+      performSearch();
+    }
+
+    function performSearch() {
+      const query = document.getElementById('search-input-hero').value.trim();
+      if (query.length < 2) {
+        document.getElementById('results-section').style.display = 'none';
+        return;
+      }
+
+      fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('results-section').style.display = 'block';
+          renderResults(data);
+        })
+        .catch(err => console.error(err));
+    }
+
+    function renderResults(data) {
+      const grid = document.getElementById('results-grid');
+      grid.innerHTML = '';
+
+      if (data.length === 0) {
+        grid.innerHTML = '<p class="text-center text-muted">No results found</p>';
+        return;
+      }
+
+      data.forEach(person => {
+        const photoCount = person.all_photos.length;
+        grid.innerHTML += `
+          <div class="col-md-4 col-lg-3">
+            <div class="result-card shadow-sm border-0 rounded-4 overflow-hidden bg-white" 
+                 style="cursor:pointer;" 
+                 onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
+              
+              <img src="${person.photo}" 
+                   class="card-img-top" 
+                   alt="${person.name}" 
+                   onerror="this.src='/public/default-photo.jpg'"
+                   style="height:220px; object-fit:cover;">
+              
+              <div class="card-body text-center p-4">
+                <h5 class="fw-bold mb-2" style="color:#003366;">${person.name}</h5>
+                <p class="text-muted mb-1"><strong>Designation:</strong> ${person.designation || '—'}</p>
+                <p class="text-muted mb-1"><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
+                <p class="text-muted mb-1"><strong>Zone:</strong> ${person.zone || '—'}</p>
+                <p class="text-muted mb-1"><strong>Region:</strong> ${person.region || '—'}</p>
+                <p class="text-muted mb-1"><strong>Group:</strong> ${person.group || '—'}</p>
+                <p class="text-muted mb-3"><strong>${person.chapter ? 'Chapter' : 'Church'}:</strong> ${person.chapter || person.church || '—'}</p>
+                
+                ${photoCount > 1 ? `<small class="text-primary">📸 Tap to view all ${photoCount} photos</small>` : ''}
+
+                <!-- Share & Copy Buttons -->
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                  <button class="btn btn-success btn-sm" 
+                          onclick="event.stopPropagation(); shareViaWhatsApp('${person.name.replace(/'/g, "\\'")}', '${(person.designation || '').replace(/'/g, "\\'")}', '${(person.kc_id || '').replace(/'/g, "\\'")}', '${(person.zone || person.blw_zone || '').replace(/'/g, "\\'")}', '${(person.group || '').replace(/'/g, "\\'")}', '${(person.chapter || person.church || '').replace(/'/g, "\\'")}', '${person.photo}', '${currentMinistry}')">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                  </button>
+
+                  <button class="btn btn-outline-secondary btn-sm" 
+                          onclick="event.stopPropagation(); copyProfileText('${person.name.replace(/'/g, "\\'")}', '${(person.designation || '').replace(/'/g, "\\'")}', '${(person.kc_id || '').replace(/'/g, "\\'")}', '${(person.zone || person.blw_zone || '').replace(/'/g, "\\'")}', '${(person.group || '').replace(/'/g, "\\'")}', '${(person.chapter || person.church || '').replace(/'/g, "\\'")}', '${currentMinistry}')">
+                    <i class="fas fa-copy"></i> Copy Text
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
     function openGallery(photos, name) {
-      if (!photos || photos.length === 0) return;
       currentPhotos = photos;
       currentIndex = 0;
       currentName = name;
-      document.getElementById('galleryImg').src = photos[0];
-      document.getElementById('galleryCaption').textContent = `${name} (1 of ${photos.length})`;
       document.getElementById('galleryModal').style.display = 'flex';
+      document.getElementById('galleryImg').src = currentPhotos[0];
+      document.getElementById('galleryCaption').textContent = `${name} (1 of ${photos.length})`;
     }
 
     function closeGallery() {
@@ -287,6 +243,45 @@
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'Escape') closeGallery();
     });
+
+    // ================== SHARE FUNCTIONS ==================
+    function shareViaWhatsApp(name, designation, kcid, zone, group, chapter, photoUrl, ministry) {
+      const ministryName = ministry === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry';
+      
+      let text = `*${name}*\n`;
+      if (designation) text += `Designation: ${designation}\n`;
+      if (kcid) text += `KC-ID: ${kcid}\n`;
+      if (zone) text += `Zone: ${zone}\n`;
+      if (group) text += `Group: ${group}\n`;
+      if (chapter) text += `${ministry === 'campus' ? 'Chapter' : 'Church'}: ${chapter}\n`;
+      text += `\nFound in ROR PARTNERSHIP DATAHUB (${ministryName})\n`;
+      if (photoUrl && photoUrl !== '/public/default-photo.jpg') {
+        text += `\nProfile Photo: ${photoUrl}`;
+      }
+
+      const encodedText = encodeURIComponent(text);
+      const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+
+      window.open(whatsappUrl, '_blank');
+    }
+
+    function copyProfileText(name, designation, kcid, zone, group, chapter, ministry) {
+      const ministryName = ministry === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry';
+      
+      let text = `${name}\n`;
+      if (designation) text += `Designation: ${designation}\n`;
+      if (kcid) text += `KC-ID: ${kcid}\n`;
+      if (zone) text += `Zone: ${zone}\n`;
+      if (group) text += `Group: ${group}\n`;
+      if (chapter) text += `${ministry === 'campus' ? 'Chapter' : 'Church'}: ${chapter}\n`;
+      text += `\nFrom ROR PARTNERSHIP DATAHUB (${ministryName})`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Profile details copied to clipboard!');
+      }).catch(() => {
+        alert('Could not copy. Please copy manually:\n\n' + text);
+      });
+    }
   </script>
 </body>
 </html>
