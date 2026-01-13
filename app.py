@@ -466,5 +466,5 @@ def add_record():
 
 
 if __name__ == '__main__':
-    print("GPD PORTAL RUNNING (local mode)")
+    print("ROR PARTNERSHIP DATAHUB RUNNING (local mode)")
     app.run(debug=True, port=5000)
