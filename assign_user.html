@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Assign New User – ROR PARTNERSHIP DATAHUB</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css_file/styles.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0b2c5d, #355fbd);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+    .back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: whitesmoke;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .container {
+      background: white;
+      width: 380px;
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+    h2 {
+      color: #003366;
+      margin-bottom: 30px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      background: #003366;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #005588;
+    }
+    #message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+
+<body>
+
+<a href="/dashboard.html" class="back">← Back to Dashboard</a>
+
+<div class="container">
+  <h2>Create New User</h2>
+
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="password" id="password" placeholder="Password" required>
+  
+  <select id="role" required>
+    <option value="">Select Role</option>
+    <option value="super">Super User</option>
+    <option value="user">User</option>
+  </select>
+
+  <button onclick="createUser()">Assign User</button>
+
+  <div id="message"></div>
+</div>
+
+<script>
+  async function createUser() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+    const messageEl = document.getElementById('message');
+
+    if (!username || !password || !role) {
+      messageEl.textContent = 'Please fill all fields';
+      messageEl.className = 'error';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          username: username,
+          password: password,
+          role: role
+        })
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        messageEl.textContent = `User "${username}" created successfully as ${role}!`;
+        messageEl.className = 'success';
+        // Optional: clear fields
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('role').value = '';
+      } else {
+        messageEl.textContent = result.error || 'Failed to create user';
+        messageEl.className = 'error';
+      }
+    } catch (err) {
+      messageEl.textContent = 'Error: ' + err.message;
+      messageEl.className = 'error';
+    }
+  }
+</script>
+
+</body>
+</html>

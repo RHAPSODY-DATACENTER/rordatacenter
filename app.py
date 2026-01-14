@@ -243,22 +243,23 @@ def users_page():
     return send_from_directory(BASE_DIR, 'users.html')
 
 
-@app.route('/upload-dataset.html')
+# === THE THREE MISSING ROUTES THAT CAUSED 404 ===
+@app.route('/upload_dataset.html')
 @login_required
 def upload_dataset_page():
-    return send_from_directory(BASE_DIR, 'upload-dataset.html')
+    return send_from_directory(BASE_DIR, 'upload_dataset.html')
 
 
-@app.route('/add-record.html')
+@app.route('/upload_individual.html')
 @login_required
-def add_record_page():
-    return send_from_directory(BASE_DIR, 'add-record.html')
+def upload_individual_page():
+    return send_from_directory(BASE_DIR, 'upload_individual.html')
 
 
-@app.route('/upload-image.html')
+@app.route('/upload_image.html')
 @login_required
 def upload_image_page():
-    return send_from_directory(BASE_DIR, 'upload-image.html')
+    return send_from_directory(BASE_DIR, 'upload_image.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -371,7 +372,7 @@ def dashboard_data():
     })
 
 
-# =============== UPLOAD DATASET ===============
+# =============== UPLOAD DATASET API ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
@@ -397,7 +398,7 @@ def upload_dataset():
     return jsonify(result)
 
 
-# =============== UPLOAD IMAGE ===============
+# =============== UPLOAD IMAGE API ===============
 @app.route('/api/upload-image', methods=['POST'])
 @login_required
 def upload_image():
@@ -453,7 +454,7 @@ def upload_image():
     return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s) to {ministry} ministry'})
 
 
-# =============== ADD RECORD ===============
+# =============== ADD RECORD API ===============
 @app.route('/api/add-record', methods=['POST'])
 @login_required
 def add_record():
