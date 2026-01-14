@@ -6,53 +6,56 @@
   <title>ROR PARTNERSHIP DATAHUB Admin</title>
   <link rel="stylesheet" href="/public/css_file/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; font-family: 'Poppins', sans-serif; }
-    .dashboard-container { max-width: 1400px; margin: 40px auto; padding: 20px; }
-    .back { display: inline-block; margin-bottom: 20px; color: white; text-decoration: none; font-weight: bold; }
-    h1 { text-align: center; color: white; margin-bottom: 30px; font-size: 2.8rem; }
-    
-    /* Tabs */
-    .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; background: rgba(255,255,255,0.15); padding: 12px; border-radius: 50px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); }
-    .tab-btn { padding: 12px 40px; font-size: 1.1rem; font-weight: 600; color: white; background: transparent; border: 2px solid rgba(255,255,255,0.4); border-radius: 30px; cursor: pointer; transition: all 0.3s ease; }
-    .tab-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-2px); }
-    .tab-btn.active { background: white; color: #003366; border-color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-
-    .card { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.25); margin-bottom: 40px; border: none; }
-    .card h2 { color: #003366; margin-bottom: 25px; font-size: 2rem; text-align: center; position: relative; }
-    .card h2::after { content: ''; width: 80px; height: 4px; background: #ff6200; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border-radius: 2px; }
-
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 25px; margin-bottom: 40px; }
-    .stat-box { background: linear-gradient(135deg, #0066cc, #3399ff); color: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.3s; }
-    .stat-box:hover { transform: translateY(-10px); }
-    .stat-number { font-size: 3rem; font-weight: 700; margin-bottom: 10px; }
-    .stat-label { font-size: 1.2rem; opacity: 0.9; }
-
-    .chart-container { position: relative; height: 420px; margin-bottom: 50px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-
-    /* Upload Buttons */
-    .admin-tools { text-align: center; margin: 60px 0; }
-    .admin-tools h2 { color: white; margin-bottom: 30px; font-size: 2rem; }
-    .upload-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; }
-    .upload-btn { 
-      padding: 18px 50px; 
-      font-size: 1.2rem; 
-      font-weight: bold; 
-      border-radius: 50px; 
-      text-decoration: none; 
-      color: white; 
-      transition: all 0.3s; 
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+    body { 
+      background: linear-gradient(135deg, #003366, #0066cc); 
+      min-height: 100vh; 
+      font-family: 'Poppins', sans-serif; 
+      margin: 0; 
+      color: #333; 
     }
-    .upload-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
-    .btn-dataset { background: #0066cc; }
-    .btn-individual { background: #ff6200; }
-    .btn-photos { background: #28a745; }
-
-    /* Settings Dropdown */
-    .settings-dropdown { position: relative; display: inline-block; }
-    .settings-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: background 0.3s; }
-    .settings-btn:hover { background: rgba(255,255,255,0.2); }
+    .dashboard-container { 
+      max-width: 1400px; 
+      margin: 40px auto; 
+      padding: 20px; 
+    }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 40px; 
+    }
+    .back { 
+      color: white; 
+      text-decoration: none; 
+      font-weight: bold; 
+      font-size: 1.1rem; 
+    }
+    .back:hover { text-decoration: underline; }
+    h1 { 
+      text-align: center; 
+      color: white; 
+      margin: 0; 
+      font-size: 2.8rem; 
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+    }
+    .settings-dropdown { 
+      position: relative; 
+      display: inline-block; 
+    }
+    .settings-btn { 
+      background: rgba(255,255,255,0.15); 
+      border: none; 
+      color: white; 
+      padding: 10px 20px; 
+      border-radius: 30px; 
+      cursor: pointer; 
+      font-size: 1.1rem; 
+      font-weight: 600; 
+      transition: all 0.3s; 
+    }
+    .settings-btn:hover { background: rgba(255,255,255,0.3); }
     .settings-menu { 
       position: absolute; 
       right: 0; 
@@ -62,7 +65,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
       display: none; 
       min-width: 180px; 
-      z-index: 1000;
+      z-index: 1000; 
     }
     .settings-menu a { 
       display: block; 
@@ -74,12 +77,128 @@
     .settings-menu a:last-child { border-bottom: none; }
     .settings-menu a:hover { background: rgba(0,51,102,0.1); }
     .settings-dropdown.open .settings-menu { display: block; }
+
+    .nav-tabs { 
+      display: flex; 
+      justify-content: center; 
+      gap: 15px; 
+      margin-bottom: 40px; 
+      background: rgba(255,255,255,0.15); 
+      padding: 12px; 
+      border-radius: 50px; 
+      backdrop-filter: blur(10px); 
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
+      border: 1px solid rgba(255,255,255,0.2); 
+    }
+    .tab-btn { 
+      padding: 12px 40px; 
+      font-size: 1.1rem; 
+      font-weight: 600; 
+      color: white; 
+      background: transparent; 
+      border: 2px solid rgba(255,255,255,0.4); 
+      border-radius: 30px; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-2px); }
+    .tab-btn.active { background: white; color: #003366; border-color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+    .card { 
+      background: rgba(255,255,255,0.95); 
+      border-radius: 20px; 
+      padding: 30px; 
+      box-shadow: 0 15px 40px rgba(0,0,0,0.25); 
+      margin-bottom: 40px; 
+      border: none; 
+    }
+    .card h2 { 
+      color: #003366; 
+      margin-bottom: 25px; 
+      font-size: 2rem; 
+      text-align: center; 
+      position: relative; 
+    }
+    .card h2::after { 
+      content: ''; 
+      width: 80px; 
+      height: 4px; 
+      background: #ff6200; 
+      position: absolute; 
+      bottom: -10px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      border-radius: 2px; 
+    }
+
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
+      gap: 25px; 
+      margin-bottom: 40px; 
+    }
+    .stat-box { 
+      background: linear-gradient(135deg, #0066cc, #3399ff); 
+      color: white; 
+      border-radius: 15px; 
+      padding: 30px; 
+      text-align: center; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+      transition: transform 0.3s; 
+    }
+    .stat-box:hover { transform: translateY(-10px); }
+    .stat-number { font-size: 3rem; font-weight: 700; margin-bottom: 10px; }
+    .stat-label { font-size: 1.2rem; opacity: 0.9; }
+
+    .chart-container { 
+      position: relative; 
+      height: 420px; 
+      margin-bottom: 50px; 
+      background: white; 
+      border-radius: 15px; 
+      padding: 20px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+    }
+
+    /* Quick Upload Buttons */
+    .admin-tools { 
+      text-align: center; 
+      margin: 60px 0; 
+    }
+    .admin-tools h2 { 
+      color: white; 
+      margin-bottom: 30px; 
+      font-size: 2rem; 
+    }
+    .upload-btns { 
+      display: flex; 
+      flex-wrap: wrap; 
+      justify-content: center; 
+      gap: 30px; 
+    }
+    .upload-btn { 
+      padding: 18px 50px; 
+      font-size: 1.2rem; 
+      font-weight: bold; 
+      border-radius: 50px; 
+      text-decoration: none; 
+      color: white; 
+      transition: all 0.3s; 
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+    }
+    .upload-btn:hover { 
+      transform: translateY(-5px); 
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4); 
+    }
+    .btn-dataset { background: #0066cc; }
+    .btn-individual { background: #ff6200; }
+    .btn-photos { background: #28a745; }
   </style>
 </head>
 <body>
 
 <div class="dashboard-container">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+  <div class="header">
     <a href="/logout" class="back">← Logout</a>
     
     <div class="settings-dropdown">
@@ -153,6 +272,7 @@
 <script>
   let currentMinistry = 'campus';
   let currentData = { campus: {}, church: {} };
+  let charts = {}; // Store chart instances to destroy on switch
 
   function setMinistry(ministry) {
     currentMinistry = ministry;
@@ -183,13 +303,17 @@
     document.getElementById(`${prefix}-regions`).textContent = data.unique_regions;
     document.getElementById(`${prefix}-zones`).textContent = data.unique_zones;
 
-    // Destroy previous charts
-    ['RegionChart', 'ZoneChart', 'DesignationChart'].forEach(id => {
-      const canvas = document.getElementById(prefix + id);
-      if (canvas.chart) canvas.chart.destroy();
+    // Destroy old charts
+    ['RegionChart', 'ZoneChart', 'DesignationChart'].forEach(type => {
+      const key = prefix + type;
+      if (charts[key]) {
+        charts[key].destroy();
+        delete charts[key];
+      }
     });
 
-    new Chart(document.getElementById(prefix + 'RegionChart'), {
+    // Region Chart
+    charts[prefix + 'RegionChart'] = new Chart(document.getElementById(prefix + 'RegionChart'), {
       type: 'doughnut',
       data: {
         labels: data.regions.map(item => item.region || 'Unknown'),
@@ -202,7 +326,8 @@
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    new Chart(document.getElementById(prefix + 'ZoneChart'), {
+    // Zone Chart
+    charts[prefix + 'ZoneChart'] = new Chart(document.getElementById(prefix + 'ZoneChart'), {
       type: 'doughnut',
       data: {
         labels: data.zones.map(item => item.zone || 'Unknown'),
@@ -215,7 +340,8 @@
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    new Chart(document.getElementById(prefix + 'DesignationChart'), {
+    // Designation Chart
+    charts[prefix + 'DesignationChart'] = new Chart(document.getElementById(prefix + 'DesignationChart'), {
       type: 'bar',
       data: {
         labels: data.designations.map(item => item.designation || 'Unknown'),

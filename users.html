@@ -17,6 +17,7 @@
     tr:hover { background: rgba(0,51,102,0.1); }
     .delete-btn { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .delete-btn:hover { background: #c82333; }
+    .delete-btn:disabled { background: #6c757d; cursor: not-allowed; }
     .warning { background: rgba(220,53,69,0.15); color: #dc3545; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; font-weight: bold; }
   </style>
 </head>
@@ -27,14 +28,14 @@
   <h1>Manage Users</h1>
 
   <div class="warning">
-    ⚠️ Warning: Deleting a user is **permanent**. You **cannot** delete the last super user to maintain system access.
+    ⚠️ Warning: Deleting a user is permanent. The system requires at least one super user — the last super user cannot be deleted.
   </div>
 
   <table id="users-table">
     <thead>
       <tr>
         <th>Username</th>
-        <th>Password (hashed)</th>
+        <th>Password (plain)</th>
         <th>Role</th>
         <th>Action</th>
       </tr>
@@ -57,7 +58,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${user.username}</td>
-          <td>•••••••• (hidden)</td>
+          <td>${user.password || '•••••• (hidden)'}</td>
           <td>${user.role}</td>
           <td>
             <button class="delete-btn" onclick="deleteUser(${user.id}, '${user.username}', '${user.role}')">
@@ -74,11 +75,11 @@
 
   async function deleteUser(id, username, role) {
     if (role === 'super') {
-      const confirmSuper = confirm(`You are trying to delete super user "${username}".\n\nAre you sure? This will remove admin access if it's the last super user!`);
+      const confirmSuper = confirm(`Deleting super user "${username}"?\nIf this is the last super user, deletion will be blocked.`);
       if (!confirmSuper) return;
     }
 
-    if (!confirm(`Delete user "${username}" permanently?\nThis cannot be undone.`)) return;
+    if (!confirm(`Permanently delete user "${username}"?\nThis cannot be undone.`)) return;
 
     try {
       const res = await fetch('/api/delete-user', {
