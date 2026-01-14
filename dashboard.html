@@ -18,7 +18,7 @@
     .dashboard-container { 
       max-width: 1400px; 
       margin: 40px auto; 
-      padding: 20px; 
+      padding: 0 20px; 
     }
     .header { 
       display: flex; 
@@ -50,9 +50,9 @@
       color: white; 
       padding: 10px 20px; 
       border-radius: 30px; 
-      cursor: pointer; 
       font-size: 1.1rem; 
       font-weight: 600; 
+      cursor: pointer; 
       transition: all 0.3s; 
     }
     .settings-btn:hover { background: rgba(255,255,255,0.3); }
@@ -65,7 +65,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
       display: none; 
       min-width: 180px; 
-      z-index: 1000; 
+      z-index: 1; 
     }
     .settings-menu a { 
       display: block; 
@@ -223,15 +223,15 @@
     <h2 id="ministry-title">BLW Campus Ministry Overview</h2>
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-number" id="campus-total">0</div>
+        <div class="stat-number" id="total">0</div>
         <p class="stat-label">Total Records</p>
       </div>
       <div class="stat-box">
-        <div class="stat-number" id="campus-regions">0</div>
+        <div class="stat-number" id="regions">0</div>
         <p class="stat-label">Unique Regions</p>
       </div>
       <div class="stat-box">
-        <div class="stat-number" id="campus-zones">0</div>
+        <div class="stat-number" id="zones">0</div>
         <p class="stat-label">Unique Zones</p>
       </div>
     </div>
@@ -240,21 +240,21 @@
   <div class="card">
     <h2>Records by Region</h2>
     <div class="chart-container">
-      <canvas id="campusRegionChart"></canvas>
+      <canvas id="regionChart"></canvas>
     </div>
   </div>
 
   <div class="card">
     <h2>Records by Zone</h2>
     <div class="chart-container">
-      <canvas id="campusZoneChart"></canvas>
+      <canvas id="zoneChart"></canvas>
     </div>
   </div>
 
   <div class="card">
     <h2>Records by Designation</h2>
     <div class="chart-container">
-      <canvas id="campusDesignationChart"></canvas>
+      <canvas id="designationChart"></canvas>
     </div>
   </div>
 
@@ -272,7 +272,7 @@
 <script>
   let currentMinistry = 'campus';
   let currentData = { campus: {}, church: {} };
-  let charts = {}; // Store chart instances to destroy on switch
+  let charts = { region: null, zone: null, designation: null };
 
   function setMinistry(ministry) {
     currentMinistry = ministry;
@@ -292,28 +292,23 @@
   }
 
   function updateDashboard() {
-    const prefix = currentMinistry;
-    const data = currentData[prefix];
+    const data = currentData[currentMinistry];
     if (!data) return;
 
     document.getElementById('ministry-title').textContent = 
-      `${prefix === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry'} Overview`;
+      `${currentMinistry === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry'} Overview`;
 
-    document.getElementById(`${prefix}-total`).textContent = data.total_records;
-    document.getElementById(`${prefix}-regions`).textContent = data.unique_regions;
-    document.getElementById(`${prefix}-zones`).textContent = data.unique_zones;
+    document.getElementById('total').textContent = data.total_records || 0;
+    document.getElementById('regions').textContent = data.unique_regions || 0;
+    document.getElementById('zones').textContent = data.unique_zones || 0;
 
-    // Destroy old charts
-    ['RegionChart', 'ZoneChart', 'DesignationChart'].forEach(type => {
-      const key = prefix + type;
-      if (charts[key]) {
-        charts[key].destroy();
-        delete charts[key];
-      }
-    });
+    // Destroy existing charts
+    if (charts.region) charts.region.destroy();
+    if (charts.zone) charts.zone.destroy();
+    if (charts.designation) charts.designation.destroy();
 
     // Region Chart
-    charts[prefix + 'RegionChart'] = new Chart(document.getElementById(prefix + 'RegionChart'), {
+    charts.region = new Chart(document.getElementById('regionChart'), {
       type: 'doughnut',
       data: {
         labels: data.regions.map(item => item.region || 'Unknown'),
@@ -327,7 +322,7 @@
     });
 
     // Zone Chart
-    charts[prefix + 'ZoneChart'] = new Chart(document.getElementById(prefix + 'ZoneChart'), {
+    charts.zone = new Chart(document.getElementById('zoneChart'), {
       type: 'doughnut',
       data: {
         labels: data.zones.map(item => item.zone || 'Unknown'),
@@ -341,7 +336,7 @@
     });
 
     // Designation Chart
-    charts[prefix + 'DesignationChart'] = new Chart(document.getElementById(prefix + 'DesignationChart'), {
+    charts.designation = new Chart(document.getElementById('designationChart'), {
       type: 'bar',
       data: {
         labels: data.designations.map(item => item.designation || 'Unknown'),
