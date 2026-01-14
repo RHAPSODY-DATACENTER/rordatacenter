@@ -1,4 +1,4 @@
-# app.py (full updated code with role-based access and new endpoints)
+# app.py
 import os
 import sqlite3
 import psycopg2
@@ -98,7 +98,7 @@ try:
             id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'user'  # Added role column: 'super' or 'user'
+            role TEXT NOT NULL DEFAULT 'user'
         )
     ''')
 
@@ -143,13 +143,16 @@ def super_required(f):
 def index():
     return send_from_directory(PUBLIC_FOLDER, 'index.html')
 
+
 @app.route('/public/<path:filename>')
 def public_files(filename):
     return send_from_directory(PUBLIC_FOLDER, filename)
 
+
 @app.route('/images/campus/<filename>')
 def campus_image(filename):
     return send_from_directory(CAMPUS_IMAGES_FOLDER, filename)
+
 
 @app.route('/images/church/<filename>')
 def church_image(filename):
@@ -213,9 +216,10 @@ def search():
 # =============== ADMIN ROUTES ===============
 @app.route('/admin')
 @login_required
-@super_required  # Only super users here
+@super_required
 def admin_dashboard():
     return send_from_directory(BASE_DIR, 'dashboard.html')
+
 
 @app.route('/admin-user')
 @login_required
@@ -223,6 +227,7 @@ def admin_user():
     if session.get('role') == 'super':
         return redirect(url_for('admin_dashboard'))
     return send_from_directory(BASE_DIR, 'admin_user.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -250,10 +255,12 @@ def login():
 
     return send_from_directory(BASE_DIR, 'login.html')
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
+
 
 @app.route('/<path:filename>')
 @login_required
@@ -496,7 +503,7 @@ def create_user():
     data = request.form
     username = data.get('username')
     password = data.get('password')
-    role = data.get('role', 'user')  # Default to 'user'
+    role = data.get('role', 'user')
 
     if not username or not password:
         return jsonify({'success': False, 'error': 'Username and password required'}), 400
@@ -507,7 +514,8 @@ def create_user():
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
     try:
-        cur.execute(f"INSERT INTO users (username, password, role) VALUES ({placeholder}, {placeholder}, {placeholder})", (username, hashed, role))
+        cur.execute(f"INSERT INTO users (username, password, role) VALUES ({placeholder}, {placeholder}, {placeholder})",
+                    (username, hashed, role))
         conn.commit()
         return jsonify({'success': True, 'message': 'User created'})
     except Exception as e:
@@ -540,5 +548,5 @@ def delete_user():
 
 
 if __name__ == '__main__':
-    print("GPD PORTAL RUNNING (local mode)")
+    print("ROR PARTNERSHIP DATAHUB RUNNING (local mode)")
     app.run(debug=True, port=5000)
