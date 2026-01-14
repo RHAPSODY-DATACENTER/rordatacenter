@@ -4,40 +4,127 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>User Dashboard – ROR PARTNERSHIP DATAHUB</title>
-  <link rel="stylesheet" href="/css_file/style.css" /> <!-- Updated to your new CSS file path -->
+  <link rel="stylesheet" href="/css_file/style.css" />
   <style>
-    /* Additional overrides if needed to move logout down */
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      position: relative; /* For positioning logout */
+    }
+    .header {
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+    .header h1 {
+      font-size: 3rem;
+      margin: 0;
+      color: white;
+    }
+    .header p {
+      font-size: 1.2rem;
+      margin: 10px 0 0;
+      opacity: 0.8;
+      color: white;
+    }
+    .cards {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+    .card-header {
+      background: #003366;
+      color: white;
+      padding: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .card-body {
+      padding: 20px;
+      color: #555;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .card-button {
+      display: inline-block;
+      background: #003366;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 10px;
+      transition: background 0.3s;
+    }
+    .card-button:hover {
+      background: #005599;
+    }
     .logout {
-      margin-top: 300px; /* Significantly increased to move it further down */
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-size: 1.2rem;
+      text-decoration: none;
+      padding: 10px 20px;
+      border: 2px solid white;
+      border-radius: 30px;
+      transition: all 0.3s;
+    }
+    .logout:hover {
+      background: white;
+      color: #003366;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>Welcome to Your Dashboard</h1>
+<a href="/logout" class="logout">Logout</a>
 
-  <div class="cards">
-    <a href="/upload_dataset.html" class="card">
-      <i class="fas fa-file-upload"></i>
-      <h2>Upload Dataset</h2>
-      <p>Bulk upload records from Excel files</p>
-    </a>
+<div class="header">
+  <h1>ROR PARTNERSHIP DATAHUB Admin Portal</h1>
+  <p>Powerful. Simple. Secure.</p>
+</div>
 
-    <a href="/upload_individual.html" class="card">
-      <i class="fas fa-user-plus"></i>
-      <h2>Add Individual Record</h2>
-      <p>Manually add a single record</p>
-    </a>
+<div class="cards">
+  <a href="/upload_dataset.html" class="card">
+    <div class="card-header">Folder Upload Dataset</div>
+    <div class="card-body">
+      Import bulk records from Excel/CSV with smart mapping and duplicate protection.
+      <div class="card-button">Open Dataset Upload</div>
+    </div>
+  </a>
 
-    <a href="/upload_image.html" class="card">
-      <i class="fas fa-images"></i>
-      <h2>Upload Photos</h2>
-      <p>Add photos to existing records</p>
-    </a>
-  </div>
+  <a href="/upload_individual.html" class="card">
+    <div class="card-header">Person Add Individual</div>
+    <div class="card-body">
+      Add or update a single record with full control.
+      <div class="card-button">Add Record</div>
+    </div>
+  </a>
 
-  <a href="/logout" class="logout">Logout</a>
+  <a href="/upload_image.html" class="card">
+    <div class="card-header">Image Upload Photo</div>
+    <div class="card-body">
+      Link high-quality photos to existing records by name.
+      <div class="card-button">Upload Image</div>
+    </div>
+  </a>
 </div>
 
 </body>
