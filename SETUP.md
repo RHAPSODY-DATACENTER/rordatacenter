@@ -1,4 +1,4 @@
-# GPD Portal - Admin Dashboard
+# ROR PARTNERSHIP DATAHUB - Admin Dashboard
 
 A comprehensive admin dashboard for managing student, pastor, and campus data with Excel to SQL conversion.
 
