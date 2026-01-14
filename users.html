@@ -6,19 +6,69 @@
   <title>Manage Users - ROR PARTNERSHIP DATAHUB</title>
   <link rel="stylesheet" href="/public/css_file/styles.css" />
   <style>
-    body { background: linear-gradient(135deg, #003366, #0066cc); color: white; font-family: 'Poppins', sans-serif; min-height: 100vh; margin: 0; padding: 20px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    h1 { text-align: center; margin-bottom: 30px; }
-    .back { display: inline-block; color: white; text-decoration: none; margin-bottom: 20px; font-weight: bold; }
+    body { 
+      background: linear-gradient(135deg, #003366, #0066cc); 
+      color: white; 
+      font-family: 'Poppins', sans-serif; 
+      min-height: 100vh; 
+      margin: 0; 
+      padding: 20px; 
+    }
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+    }
+    h1 { 
+      text-align: center; 
+      margin-bottom: 30px; 
+    }
+    .back { 
+      display: inline-block; 
+      color: white; 
+      text-decoration: none; 
+      margin-bottom: 20px; 
+      font-weight: bold; 
+      font-size: 1.1rem; 
+    }
     .back:hover { text-decoration: underline; }
-    table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.95); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: #333; }
-    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background: #003366; color: white; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      background: rgba(255,255,255,0.95); 
+      border-radius: 12px; 
+      overflow: hidden; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+      color: #333; 
+    }
+    th, td { 
+      padding: 15px; 
+      text-align: left; 
+      border-bottom: 1px solid #ddd; 
+    }
+    th { 
+      background: #003366; 
+      color: white; 
+    }
     tr:hover { background: rgba(0,51,102,0.1); }
-    .delete-btn { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .delete-btn { 
+      background: #dc3545; 
+      color: white; 
+      border: none; 
+      padding: 8px 16px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-weight: bold; 
+    }
     .delete-btn:hover { background: #c82333; }
-    .delete-btn:disabled { background: #6c757d; cursor: not-allowed; }
-    .warning { background: rgba(220,53,69,0.15); color: #dc3545; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; font-weight: bold; }
+    .warning { 
+      background: rgba(220,53,69,0.15); 
+      color: #dc3545; 
+      padding: 15px; 
+      border-radius: 8px; 
+      margin: 20px 0; 
+      text-align: center; 
+      font-weight: bold; 
+    }
   </style>
 </head>
 <body>
@@ -28,14 +78,14 @@
   <h1>Manage Users</h1>
 
   <div class="warning">
-    ⚠️ Warning: Deleting a user is permanent. The system requires at least one super user — the last super user cannot be deleted.
+    ⚠️ Warning: Deleting a user is **permanent**. The system requires at least one super user — the last super user cannot be deleted.
   </div>
 
   <table id="users-table">
     <thead>
       <tr>
         <th>Username</th>
-        <th>Password (plain)</th>
+        <th>Password (hashed)</th>
         <th>Role</th>
         <th>Action</th>
       </tr>
@@ -48,7 +98,7 @@
   async function loadUsers() {
     try {
       const res = await fetch('/api/list-users');
-      if (!res.ok) throw new Error('Failed to load users');
+      if (!res.ok) throw new Error(await res.text());
       const users = await res.json();
 
       const tbody = document.getElementById('users-body');
@@ -58,7 +108,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${user.username}</td>
-          <td>${user.password || '•••••• (hidden)'}</td>
+          <td>${user.password ? user.password.substring(0, 20) + '...' : '—'}</td>
           <td>${user.role}</td>
           <td>
             <button class="delete-btn" onclick="deleteUser(${user.id}, '${user.username}', '${user.role}')">
@@ -69,13 +119,14 @@
         tbody.appendChild(row);
       });
     } catch (err) {
-      alert('Error loading users: ' + err.message);
+      console.error(err);
+      alert('Failed to load users: ' + err.message);
     }
   }
 
   async function deleteUser(id, username, role) {
     if (role === 'super') {
-      const confirmSuper = confirm(`Deleting super user "${username}"?\nIf this is the last super user, deletion will be blocked.`);
+      const confirmSuper = confirm(`You are about to delete super user "${username}".\nIf this is the last super user, deletion will be blocked. Proceed?`);
       if (!confirmSuper) return;
     }
 
@@ -92,12 +143,12 @@
 
       if (result.success) {
         alert(`User "${username}" deleted successfully`);
-        loadUsers();
+        loadUsers(); // Refresh the list
       } else {
         alert(result.error || 'Failed to delete user');
       }
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('Network error: ' + err.message);
     }
   }
 
