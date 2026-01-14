@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Users - ROR PARTNERSHIP DATAHUB Admin</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .back {
+      display: inline-block;
+      color: white;
+      text-decoration: none;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .back:hover { text-decoration: underline; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      color: #333;
+    }
+    th, td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #003366;
+      color: white;
+    }
+    tr:hover { background: rgba(0,51,102,0.1); }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .delete-btn:hover {
+      background: #c82333;
+    }
+    .warning {
+      background: rgba(220,53,69,0.15);
+      color: #dc3545;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/dashboard.html" class="back">← Back to Dashboard</a>
+  <h1>Manage Users</h1>
+
+  <div class="warning">
+    ⚠️ Warning: Once a user is deleted, it is **permanently deleted forever**. This action cannot be undone.
+  </div>
+
+  <table id="users-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="users-body"></tbody>
+  </table>
+</div>
+
+<script>
+  async function loadUsers() {
+    try {
+      const res = await fetch('/api/list-users');
+      if (!res.ok) throw new Error('Failed to load users');
+      const users = await res.json();
+
+      const tbody = document.getElementById('users-body');
+      tbody.innerHTML = '';
+
+      users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.id}</td>
+          <td>${user.username}</td>
+          <td>${user.role}</td>
+          <td>
+            <button class="delete-btn" onclick="deleteUser(${user.id}, '${user.username}')">
+              Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    } catch (err) {
+      alert('Error loading users: ' + err.message);
+    }
+  }
+
+  async function deleteUser(id, username) {
+    if (!confirm(`Are you sure you want to permanently delete user "${username}"?\nThis cannot be undone!`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert(`User "${username}" deleted successfully`);
+        loadUsers(); // Refresh list
+      } else {
+        alert('Failed to delete: ' + result.error);
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+
+  // Load users when page opens
+  window.onload = loadUsers;
+</script>
+</body>
+</html>

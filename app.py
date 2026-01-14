@@ -1,4 +1,4 @@
-# app.py
+# app.py (full updated code with role-based access and new endpoints)
 import os
 import sqlite3
 import psycopg2
@@ -97,7 +97,8 @@ try:
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user'  # Added role column: 'super' or 'user'
         )
     ''')
 
@@ -105,7 +106,7 @@ try:
     cur.execute("SELECT 1 FROM users WHERE username = 'super'")
     if cur.fetchone() is None:
         hashed = generate_password_hash('superuser')
-        cur.execute("INSERT INTO users (username, password) VALUES ('super', %s)", (hashed,))
+        cur.execute("INSERT INTO users (username, password, role) VALUES ('super', %s, 'super')", (hashed,))
         print("[STARTUP] Super user created")
     else:
         print("[STARTUP] Super user already exists")
@@ -128,21 +129,27 @@ def login_required(f):
     return decorated
 
 
+def super_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('role') != 'super':
+            return redirect(url_for('admin_user'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # =============== PUBLIC ROUTES ===============
 @app.route('/')
 def index():
     return send_from_directory(PUBLIC_FOLDER, 'index.html')
 
-
 @app.route('/public/<path:filename>')
 def public_files(filename):
     return send_from_directory(PUBLIC_FOLDER, filename)
 
-
 @app.route('/images/campus/<filename>')
 def campus_image(filename):
     return send_from_directory(CAMPUS_IMAGES_FOLDER, filename)
-
 
 @app.route('/images/church/<filename>')
 def church_image(filename):
@@ -206,9 +213,16 @@ def search():
 # =============== ADMIN ROUTES ===============
 @app.route('/admin')
 @login_required
+@super_required  # Only super users here
 def admin_dashboard():
     return send_from_directory(BASE_DIR, 'dashboard.html')
 
+@app.route('/admin-user')
+@login_required
+def admin_user():
+    if session.get('role') == 'super':
+        return redirect(url_for('admin_dashboard'))
+    return send_from_directory(BASE_DIR, 'admin_user.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -217,15 +231,18 @@ def login():
         password = request.form['password']
         conn = get_db_connection()
         cur = conn.cursor()
-
         placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
-        cur.execute(f"SELECT id, password FROM users WHERE username = {placeholder}", (username,))
+        cur.execute(f"SELECT id, password, role FROM users WHERE username = {placeholder}", (username,))
         user = cur.fetchone()
         conn.close()
 
         if user and check_password_hash(user['password'], password):
             session['logged_in'] = True
-            return redirect(request.args.get('next') or '/admin')
+            session['role'] = user['role']
+            if user['role'] == 'super':
+                return redirect(request.args.get('next') or '/admin')
+            else:
+                return redirect(request.args.get('next') or '/admin-user')
         else:
             error = '<div style="color:red;text-align:center;margin:20px;font-weight:bold;">Invalid username or password</div>'
             html = open(os.path.join(BASE_DIR, 'login.html'), 'r', encoding='utf-8').read()
@@ -233,12 +250,10 @@ def login():
 
     return send_from_directory(BASE_DIR, 'login.html')
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
-
 
 @app.route('/<path:filename>')
 @login_required
@@ -246,7 +261,7 @@ def admin_files(filename):
     return send_from_directory(BASE_DIR, filename)
 
 
-# =============== DASHBOARD DATA - FIXED FOR POSTGRES & VISUALIZATION ===============
+# =============== DASHBOARD DATA ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -254,15 +269,14 @@ def dashboard_data():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Helper for single-value queries (Postgres dict vs SQLite tuple)
         def fetch_one(query):
             cur.execute(query)
             row = cur.fetchone()
             if row is None:
                 return 0
-            if isinstance(row, dict):  # Postgres
+            if isinstance(row, dict):
                 return list(row.values())[0]
-            return row[0]  # SQLite tuple
+            return row[0]
 
         total_records = fetch_one(f"SELECT COUNT(*) FROM {table}")
 
@@ -274,7 +288,6 @@ def dashboard_data():
             f"SELECT COUNT(DISTINCT {zone_col}) FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''"
         )
 
-        # Top regions
         cur.execute(f"""
             SELECT region, COUNT(*) as count
             FROM {table}
@@ -285,7 +298,6 @@ def dashboard_data():
         """)
         regions = [{"region": r['region'] or "Unknown", "count": r['count']} for r in cur.fetchall()]
 
-        # Top zones
         cur.execute(f"""
             SELECT {zone_col}, COUNT(*) as count
             FROM {table}
@@ -296,7 +308,6 @@ def dashboard_data():
         """)
         zones = [{"zone": z[zone_col] or "Unknown", "count": z['count']} for z in cur.fetchall()]
 
-        # Top designations
         cur.execute(f"""
             SELECT designation, COUNT(*) as count
             FROM {table}
@@ -465,6 +476,69 @@ def add_record():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# =============== USER MANAGEMENT ENDPOINTS ===============
+@app.route('/api/list-users', methods=['GET'])
+@login_required
+@super_required
+def list_users():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, role FROM users")
+    users = cur.fetchall()
+    conn.close()
+    return jsonify([{'id': u['id'], 'username': u['username'], 'role': u['role']} for u in users])
+
+
+@app.route('/api/create-user', methods=['POST'])
+@login_required
+@super_required
+def create_user():
+    data = request.form
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'user')  # Default to 'user'
+
+    if not username or not password:
+        return jsonify({'success': False, 'error': 'Username and password required'}), 400
+
+    hashed = generate_password_hash(password)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+    try:
+        cur.execute(f"INSERT INTO users (username, password, role) VALUES ({placeholder}, {placeholder}, {placeholder})", (username, hashed, role))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'User created'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@app.route('/api/delete-user', methods=['POST'])
+@login_required
+@super_required
+def delete_user():
+    data = request.json
+    user_id = data.get('id')
+
+    if not user_id:
+        return jsonify({'success': False, 'error': 'ID required'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+    try:
+        cur.execute(f"DELETE FROM users WHERE id = {placeholder}", (user_id,))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'User deleted'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
-    print("ROR PARTNERSHIP DATAHUB RUNNING (local mode)")
+    print("GPD PORTAL RUNNING (local mode)")
     app.run(debug=True, port=5000)
