@@ -1,4 +1,4 @@
-# app.py
+# app.py (full version with fixes)
 import os
 import sqlite3
 import psycopg2
@@ -243,6 +243,24 @@ def users_page():
     return send_from_directory(BASE_DIR, 'users.html')
 
 
+@app.route('/upload-dataset.html')
+@login_required
+def upload_dataset_page():
+    return send_from_directory(BASE_DIR, 'upload-dataset.html')
+
+
+@app.route('/add-record.html')
+@login_required
+def add_record_page():
+    return send_from_directory(BASE_DIR, 'add-record.html')
+
+
+@app.route('/upload-image.html')
+@login_required
+def upload_image_page():
+    return send_from_directory(BASE_DIR, 'upload-image.html')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -274,12 +292,6 @@ def login():
 def logout():
     session.clear()
     return redirect('/login')
-
-
-@app.route('/<path:filename>')
-@login_required
-def admin_files(filename):
-    return send_from_directory(BASE_DIR, filename)
 
 
 # =============== DASHBOARD DATA ===============
@@ -359,144 +371,6 @@ def dashboard_data():
     })
 
 
-# =============== UPLOAD DATASET ===============
-@app.route('/api/upload-dataset', methods=['POST'])
-@login_required
-def upload_dataset():
-    ministry = request.form.get('ministry')
-    if ministry not in ['campus', 'church']:
-        return jsonify({'error': 'Invalid ministry'}), 400
-
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-
-    filename = secure_filename(file.filename)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
-    saved_name = timestamp + "_" + filename
-    filepath = os.path.join(UPLOAD_FOLDER, saved_name)
-    file.save(filepath)
-
-    from db_converter import DatabaseConverter
-    db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
-    result = db.convert_excel_to_sql(filepath, ministry)
-    return jsonify(result)
-
-
-# =============== UPLOAD IMAGE ===============
-@app.route('/api/upload-image', methods=['POST'])
-@login_required
-def upload_image():
-    ministry = request.form.get('ministry')
-    if ministry not in ['campus', 'church']:
-        return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
-
-    images_folder = CAMPUS_IMAGES_FOLDER if ministry == 'campus' else CHURCH_IMAGES_FOLDER
-    table = 'campus_records' if ministry == 'campus' else 'church_records'
-
-    if 'images' not in request.files:
-        return jsonify({'success': False, 'error': 'No images'}), 400
-    files = request.files.getlist('images')
-    valid_files = [f for f in files if f.filename != '']
-    if len(valid_files) > 4:
-        return jsonify({'success': False, 'error': 'Max 4 images'}), 400
-
-    name = request.form.get('name', '').strip()
-    if not name:
-        return jsonify({'success': False, 'error': 'Name required'}), 400
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute(f"SELECT images_json FROM {table} WHERE LOWER(name) = LOWER(%s)", (name,))
-    row = cur.fetchone()
-    if not row:
-        conn.close()
-        return jsonify({'success': False, 'error': 'Name not found'}), 404
-
-    current = json.loads(row['images_json']) if row['images_json'] else []
-
-    saved_paths = []
-    for file in valid_files:
-        ext = os.path.splitext(file.filename)[1].lower()
-        if ext not in {'.jpg', '.jpeg', '.png', '.webp'}:
-            continue
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
-        safe_name = secure_filename(name.replace(' ', '_'))
-        filename = f"{safe_name}_{timestamp}{ext}"
-        filepath = os.path.join(images_folder, filename)
-        file.save(filepath)
-        prefix = 'campus' if ministry == 'campus' else 'church'
-        saved_paths.append(f"/images/{prefix}/{filename}")
-
-    all_images = current + saved_paths
-    final_images = all_images[-4:]
-
-    cur.execute(f"UPDATE {table} SET images_json = %s WHERE LOWER(name) = LOWER(%s)",
-                (json.dumps(final_images), name))
-    conn.commit()
-    conn.close()
-
-    return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s) to {ministry} ministry'})
-
-
-# =============== ADD RECORD ===============
-@app.route('/api/add-record', methods=['POST'])
-@login_required
-def add_record():
-    try:
-        data = request.get_json()
-        ministry = data.get('ministry')
-        if ministry not in ['campus', 'church']:
-            return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
-
-        name = data.get('name', '').strip()
-        if not name:
-            return jsonify({'success': False, 'error': 'Name required'}), 400
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        table = 'campus_records' if ministry == 'campus' else 'church_records'
-
-        placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
-        if ministry == 'campus':
-            cur.execute(f'''
-                INSERT INTO {table} 
-                (region, designation, name, kc_id, blw_zone, group_name, chapter)
-                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
-                ON CONFLICT (name) DO NOTHING
-            ''', (
-                data.get('region', ''),
-                data.get('designation', ''),
-                name,
-                data.get('kc_id', ''),
-                data.get('blw_zone', ''),
-                data.get('group_name', ''),
-                data.get('chapter', '')
-            ))
-        else:
-            cur.execute(f'''
-                INSERT INTO {table} 
-                (region, designation, name, kc_id, group_name, zone, church)
-                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
-                ON CONFLICT (name) DO NOTHING
-            ''', (
-                data.get('region', ''),
-                data.get('designation', ''),
-                name,
-                data.get('kc_id', ''),
-                data.get('group_name', ''),
-                data.get('zone', ''),
-                data.get('church', '')
-            ))
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'message': 'Record added'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
 @login_required
@@ -504,7 +378,7 @@ def add_record():
 def list_users():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, username, role FROM users")
+    cur.execute("SELECT id, username, role FROM users ORDER BY username")
     users = cur.fetchall()
     conn.close()
     return jsonify([{'id': u['id'], 'username': u['username'], 'role': u['role']} for u in users])
@@ -531,7 +405,7 @@ def create_user():
         cur.execute(f"INSERT INTO users (username, password, role) VALUES ({placeholder}, {placeholder}, {placeholder})",
                     (username, hashed, role))
         conn.commit()
-        return jsonify({'success': True, 'message': 'User created'})
+        return jsonify({'success': True, 'message': f'User "{username}" created as {role}'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     finally:
@@ -551,10 +425,23 @@ def delete_user():
     conn = get_db_connection()
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+
+    # Check how many super users remain
+    cur.execute("SELECT COUNT(*) FROM users WHERE role = 'super'")
+    super_count = cur.fetchone()[0]
+
+    # Get the role of the user to be deleted
+    cur.execute(f"SELECT role FROM users WHERE id = {placeholder}", (user_id,))
+    user_role = cur.fetchone()
+
+    if user_role and user_role[0] == 'super' and super_count <= 1:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Cannot delete the last super user'}), 403
+
     try:
         cur.execute(f"DELETE FROM users WHERE id = {placeholder}", (user_id,))
         conn.commit()
-        return jsonify({'success': True, 'message': 'User deleted'})
+        return jsonify({'success': True, 'message': 'User deleted successfully'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     finally:

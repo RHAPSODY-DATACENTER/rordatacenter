@@ -10,7 +10,7 @@
     body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; font-family: 'Poppins', sans-serif; }
     .dashboard-container { max-width: 1400px; margin: 40px auto; padding: 20px; }
     .back { display: inline-block; margin-bottom: 20px; color: white; text-decoration: none; font-weight: bold; }
-    h1 { text-align: center; color: white; margin-bottom: 30px; font-size: 2.8rem; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    h1 { text-align: center; color: white; margin-bottom: 30px; font-size: 2.8rem; }
     
     /* Tabs */
     .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; background: rgba(255,255,255,0.15); padding: 12px; border-radius: 50px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); }
@@ -50,8 +50,9 @@
     .btn-photos { background: #28a745; }
 
     /* Settings Dropdown */
-    .settings-dropdown { position: relative; display: inline-block; margin-left: auto; }
-    .settings-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+    .settings-dropdown { position: relative; display: inline-block; }
+    .settings-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: background 0.3s; }
+    .settings-btn:hover { background: rgba(255,255,255,0.2); }
     .settings-menu { 
       position: absolute; 
       right: 0; 
@@ -61,7 +62,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
       display: none; 
       min-width: 180px; 
-      z-index: 1;
+      z-index: 1000;
     }
     .settings-menu a { 
       display: block; 
@@ -81,7 +82,6 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
     <a href="/logout" class="back">← Logout</a>
     
-    <!-- Settings Dropdown -->
     <div class="settings-dropdown">
       <button class="settings-btn" onclick="document.querySelector('.settings-dropdown').classList.toggle('open')">
         <i class="fas fa-cog"></i> Settings
@@ -183,13 +183,12 @@
     document.getElementById(`${prefix}-regions`).textContent = data.unique_regions;
     document.getElementById(`${prefix}-zones`).textContent = data.unique_zones;
 
-    // Destroy previous charts if they exist
+    // Destroy previous charts
     ['RegionChart', 'ZoneChart', 'DesignationChart'].forEach(id => {
       const canvas = document.getElementById(prefix + id);
       if (canvas.chart) canvas.chart.destroy();
     });
 
-    // Region Chart
     new Chart(document.getElementById(prefix + 'RegionChart'), {
       type: 'doughnut',
       data: {
@@ -203,7 +202,6 @@
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // Zone Chart
     new Chart(document.getElementById(prefix + 'ZoneChart'), {
       type: 'doughnut',
       data: {
@@ -217,7 +215,6 @@
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // Designation Chart
     new Chart(document.getElementById(prefix + 'DesignationChart'), {
       type: 'bar',
       data: {
