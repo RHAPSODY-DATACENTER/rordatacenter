@@ -229,6 +229,20 @@ def admin_user():
     return send_from_directory(BASE_DIR, 'admin_user.html')
 
 
+@app.route('/assign_user.html')
+@login_required
+@super_required
+def assign_user_page():
+    return send_from_directory(BASE_DIR, 'assign_user.html')
+
+
+@app.route('/users.html')
+@login_required
+@super_required
+def users_page():
+    return send_from_directory(BASE_DIR, 'users.html')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
