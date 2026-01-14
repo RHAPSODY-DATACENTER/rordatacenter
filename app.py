@@ -243,7 +243,6 @@ def users_page():
     return send_from_directory(BASE_DIR, 'users.html')
 
 
-# === THE THREE MISSING ROUTES THAT CAUSED 404 ===
 @app.route('/upload_dataset.html')
 @login_required
 def upload_dataset_page():
@@ -295,6 +294,12 @@ def logout():
     return redirect('/login')
 
 
+@app.route('/<path:filename>')
+@login_required
+def admin_files(filename):
+    return send_from_directory(BASE_DIR, filename)
+
+
 # =============== DASHBOARD DATA ===============
 @app.route('/api/dashboard-data')
 @login_required
@@ -333,14 +338,14 @@ def dashboard_data():
         regions = [{"region": r['region'] or "Unknown", "count": r['count']} for r in cur.fetchall()]
 
         cur.execute(f"""
-            SELECT {zone_col}, COUNT(*) as count
+            SELECT {zone_col} as zone, COUNT(*) as count
             FROM {table}
             WHERE {zone_col} IS NOT NULL AND {zone_col} != ''
             GROUP BY {zone_col}
             ORDER BY count DESC
             LIMIT 10
         """)
-        zones = [{"zone": z[zone_col] or "Unknown", "count": z['count']} for z in cur.fetchall()]
+        zones = [{"zone": z['zone'] or "Unknown", "count": z['count']} for z in cur.fetchall()]
 
         cur.execute(f"""
             SELECT designation, COUNT(*) as count
@@ -372,7 +377,7 @@ def dashboard_data():
     })
 
 
-# =============== UPLOAD DATASET API ===============
+# =============== UPLOAD DATASET ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
@@ -398,7 +403,7 @@ def upload_dataset():
     return jsonify(result)
 
 
-# =============== UPLOAD IMAGE API ===============
+# =============== UPLOAD IMAGE ===============
 @app.route('/api/upload-image', methods=['POST'])
 @login_required
 def upload_image():
@@ -454,7 +459,7 @@ def upload_image():
     return jsonify({'success': True, 'message': f'Uploaded {len(saved_paths)} image(s) to {ministry} ministry'})
 
 
-# =============== ADD RECORD API ===============
+# =============== ADD RECORD ===============
 @app.route('/api/add-record', methods=['POST'])
 @login_required
 def add_record():
