@@ -1,9 +1,4 @@
-# app.py - Full updated version with all fixes
-# - Corrected CSS paths (public/css_file/styles.css)
-# - Fixed delete_user endpoint (RealDictCursor dict access)
-# - All upload pages & API routes included
-# - Dashboard data endpoint safe & consistent
-
+# app.py
 import os
 import json
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
@@ -55,6 +50,7 @@ def get_db_connection():
             print(f"[DB ERROR] Postgres connection failed: {str(e)}")
 
     print("[DB DEBUG] Falling back to local SQLite")
+    import sqlite3
     return sqlite3.connect(DATABASE_PATH)
 
 # === AUTO INITIALIZE DB ON STARTUP ===
@@ -353,13 +349,13 @@ def dashboard_data():
         "church": church_stats
     })
 
-# =============== UPLOAD DATASET API ===============
+# =============== UPLOAD DATASET API (NOW INSERTS TO DB) ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
     ministry = request.form.get('ministry')
     if ministry not in ['campus', 'church']:
-        return jsonify({'error': 'Invalid ministry'}), 400
+        return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
 
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
@@ -373,12 +369,18 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # Optional: process with converter (uncomment if needed)
-    # from db_converter import DatabaseConverter
-    # db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
-    # result = db.convert_excel_to_sql(filepath, ministry)
+    # Process file and insert into database
+    from db_converter import DatabaseConverter
+    db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
+    result = db.convert_excel_to_sql(filepath, ministry)
 
-    return jsonify({'success': True, 'message': 'Dataset uploaded successfully'})
+    # Optional: clean up file after processing
+    try:
+        os.remove(filepath)
+    except:
+        pass
+
+    return jsonify(result)
 
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
@@ -433,12 +435,10 @@ def delete_user():
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
 
-    # Check how many super users remain
     cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'super'")
     super_row = cur.fetchone()
     super_count = super_row['count'] if super_row else 0
 
-    # Get role of user to delete
     cur.execute(f"SELECT role FROM users WHERE id = {placeholder}", (user_id,))
     user_row = cur.fetchone()
 
