@@ -1,8 +1,4 @@
-# app.py - Full updated version (January 2026)
-# Fixed delete_user endpoint to properly handle RealDictCursor result
-# All routes for upload pages included
-# Dashboard data endpoint improved for consistency
-
+# app.py
 import os
 import json
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
@@ -54,6 +50,7 @@ def get_db_connection():
             print(f"[DB ERROR] Postgres connection failed: {str(e)}")
 
     print("[DB DEBUG] Falling back to local SQLite")
+    import sqlite3
     return sqlite3.connect(DATABASE_PATH)
 
 # === AUTO INITIALIZE DB ON STARTUP ===
@@ -352,6 +349,39 @@ def dashboard_data():
         "church": church_stats
     })
 
+# =============== UPLOAD DATASET API (NOW INSERTS TO DB) ===============
+@app.route('/api/upload-dataset', methods=['POST'])
+@login_required
+def upload_dataset():
+    ministry = request.form.get('ministry')
+    if ministry not in ['campus', 'church']:
+        return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    filename = secure_filename(file.filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+    saved_name = timestamp + filename
+    filepath = os.path.join(UPLOAD_FOLDER, saved_name)
+    file.save(filepath)
+
+    # Process file and insert into database
+    from db_converter import DatabaseConverter
+    db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
+    result = db.convert_excel_to_sql(filepath, ministry)
+
+    # Optional: clean up file after processing
+    try:
+        os.remove(filepath)
+    except:
+        pass
+
+    return jsonify(result)
+
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
 @login_required
@@ -405,12 +435,10 @@ def delete_user():
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
 
-    # Check how many super users remain
     cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'super'")
     super_row = cur.fetchone()
     super_count = super_row['count'] if super_row else 0
 
-    # Get role of user to delete
     cur.execute(f"SELECT role FROM users WHERE id = {placeholder}", (user_id,))
     user_row = cur.fetchone()
 
