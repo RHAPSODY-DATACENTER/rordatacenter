@@ -1,192 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Upload Photos - GPD Admin Portal</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Photos - ROR PARTNERSHIP DATAHUB</title>
   <link rel="stylesheet" href="/public/css_file/styles.css" />
   <style>
-    body { background: linear-gradient(135deg, #003366, #0066cc); min-height: 100vh; }
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+    }
     .container {
       max-width: 700px;
-      margin: 40px auto;
+      margin: 60px auto;
       background: white;
       padding: 40px;
       border-radius: 20px;
       box-shadow: 0 15px 40px rgba(0,0,0,0.3);
     }
-    .back { display: inline-block; margin-bottom: 20px; color: #003366; text-decoration: none; font-weight: bold; }
-    h1 { text-align: center; color: #003366; font-size: 2.2rem; margin-bottom: 20px; }
-    select, input[type="text"] {
-      width: 100%;
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 12px;
-      border: 2px solid #ddd;
-      font-size: 1.1rem;
-    }
-    .upload-area {
-      border: 4px dashed #003366;
-      border-radius: 20px;
-      padding: 60px;
+    h1 {
       text-align: center;
-      background: #f8fbff;
-      cursor: pointer;
-      margin: 20px 0;
+      color: #003366;
+      margin-bottom: 30px;
     }
-    .preview {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
-      margin: 20px 0;
-    }
-    .preview img { width: 100%; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    button {
-      display: block;
-      width: 300px;
-      margin: 30px auto;
-      padding: 16px;
-      background: linear-gradient(135deg, #003366, #0066cc);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      font-size: 1.3rem;
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #0066cc;
+      text-decoration: none;
       font-weight: bold;
-      cursor: pointer;
     }
-    .result { margin-top: 30px; text-align: center; font-weight: bold; font-size: 1.2rem; }
-    .success { color: green; }
-    .error { color: red; }
-    #name-suggestions {
+    .back:hover { text-decoration: underline; }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    label {
+      font-weight: 600;
+      color: #003366;
+    }
+    input, select {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    #suggestions {
+      border: 1px solid #ccc;
       max-height: 200px;
       overflow-y: auto;
       background: white;
-      border: 2px solid #ddd;
-      border-radius: 12px;
-      margin-top: -10px;
-      margin-bottom: 20px;
+      border-radius: 8px;
+      margin-top: 5px;
       display: none;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
     .suggestion-item {
-      padding: 15px;
+      padding: 10px;
       cursor: pointer;
-      border-bottom: 1px solid #eee;
-      transition: background 0.3s;
     }
     .suggestion-item:hover {
       background: #f0f0f0;
     }
-    .suggestion-item:last-child { border-bottom: none; }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover { background: #0055aa; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    #preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .preview-img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <a href="/admin" class="back">← Back to Dashboard</a>
-  <h1>Upload Up to 4 Photos</h1>
+  <h1>Upload Photos to Record</h1>
 
-  <form id="uploadForm" enctype="multipart/form-data">
-    <select name="ministry" id="ministry-select" required>
-      <option value="">-- Select Ministry --</option>
+  <form id="uploadImageForm" enctype="multipart/form-data">
+    <label for="ministry">Ministry</label>
+    <select id="ministry" name="ministry" required>
+      <option value="">-- Select --</option>
       <option value="campus">BLW Campus Ministry</option>
       <option value="church">Christ Embassy Church Ministry</option>
     </select>
 
-    <input type="text" name="name" id="name-input" placeholder="Full Name (Exact Match Required)" required>
-    <div id="name-suggestions"></div>
+    <label for="name">Search Record Name</label>
+    <input type="text" id="name" name="name" placeholder="Type name to search..." required autocomplete="off">
+    <div id="suggestions"></div>
 
-    <div class="upload-area">
-      <h3>Drop up to 4 images here</h3>
-      <p>or click to select • JPG, PNG, WebP</p>
-      <input type="file" name="images" accept="image/*" multiple required>
-    </div>
+    <label for="images">Select Photos (max 4)</label>
+    <input type="file" id="images" name="images" accept="image/*" multiple required />
+    <div id="preview"></div>
 
-    <div id="preview" class="preview"></div>
-
-    <button type="submit">Upload Photos</button>
+    <button type="submit" id="submitBtn">Upload Photos</button>
   </form>
 
-  <div id="result" class="result"></div>
+  <div id="result"></div>
 </div>
 
 <script>
-  document.querySelector('input[type="file"]').onchange = function(e) {
-    const preview = document.getElementById('preview');
-    preview.innerHTML = '';
-    Array.from(e.target.files).slice(0, 4).forEach(file => {
+  const form = document.getElementById('uploadImageForm');
+  const nameInput = document.getElementById('name');
+  const suggestionsDiv = document.getElementById('suggestions');
+  const imagesInput = document.getElementById('images');
+  const previewDiv = document.getElementById('preview');
+  const submitBtn = document.getElementById('submitBtn');
+  const resultDiv = document.getElementById('result');
+
+  // Preview selected images
+  imagesInput.addEventListener('change', () => {
+    previewDiv.innerHTML = '';
+    if (imagesInput.files.length > 4) {
+      alert('Maximum 4 images allowed');
+      imagesInput.value = '';
+      return;
+    }
+    [...imagesInput.files].forEach(file => {
       const reader = new FileReader();
-      reader.onload = ev => {
+      reader.onload = e => {
         const img = document.createElement('img');
-        img.src = ev.target.result;
-        preview.appendChild(img);
+        img.src = e.target.result;
+        img.className = 'preview-img';
+        previewDiv.appendChild(img);
       };
       reader.readAsDataURL(file);
     });
-  };
+  });
 
-  document.getElementById('uploadForm').onsubmit = async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const res = await fetch('/api/upload-image', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    document.getElementById('result').innerHTML = data.success
-      ? '<span class="success">' + data.message + '</span>'
-      : '<span class="error">Error: ' + data.error + '</span>';
-  };
-
-  // Autocomplete for name input
-  const nameInput = document.getElementById('name-input');
-  const suggestionsDiv = document.getElementById('name-suggestions');
-  const ministrySelect = document.getElementById('ministry-select');
-
-  nameInput.addEventListener('input', async function() {
-    const query = this.value.trim();
-    const ministry = ministrySelect.value;
-
-    if (query.length < 2 || !ministry) {
-      suggestionsDiv.style.display = 'none';
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministry}`);
-      const data = await res.json();
-
-      suggestionsDiv.innerHTML = '';
-      if (data.length === 0) {
+  // Autocomplete for name
+  let timeout;
+  nameInput.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(async () => {
+      const query = nameInput.value.trim();
+      if (query.length < 3) {
         suggestionsDiv.style.display = 'none';
         return;
       }
 
-      data.forEach(person => {
-        const item = document.createElement('div');
-        item.classList.add('suggestion-item');
-        item.textContent = person.name;
-        item.onclick = () => {
-          nameInput.value = person.name;
-          suggestionsDiv.style.display = 'none';
-        };
-        suggestionsDiv.appendChild(item);
-      });
+      try {
+        const ministry = document.getElementById('ministry').value;
+        if (!ministry) return;
 
-      suggestionsDiv.style.display = 'block';
-    } catch (err) {
-      console.error(err);
-      suggestionsDiv.style.display = 'none';
-    }
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministry}`);
+        const people = await res.json();
+
+        suggestionsDiv.innerHTML = '';
+        if (people.length === 0) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
+
+        people.forEach(person => {
+          const item = document.createElement('div');
+          item.className = 'suggestion-item';
+          item.textContent = person.name;
+          item.onclick = () => {
+            nameInput.value = person.name;
+            suggestionsDiv.style.display = 'none';
+          };
+          suggestionsDiv.appendChild(item);
+        });
+
+        suggestionsDiv.style.display = 'block';
+      } catch (err) {
+        suggestionsDiv.style.display = 'none';
+      }
+    }, 300);
   });
 
-  // Hide suggestions on click outside
+  // Hide suggestions when clicking outside
   document.addEventListener('click', e => {
     if (e.target !== nameInput) {
       suggestionsDiv.style.display = 'none';
     }
   });
-</script>
 
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+    resultDiv.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        resultDiv.innerHTML = `<div class="success">${data.message}</div>`;
+        form.reset();
+        previewDiv.innerHTML = '';
+      } else {
+        resultDiv.innerHTML = `<div class="error">Error: ${data.error || 'Upload failed'}</div>`;
+      }
+    } catch (err) {
+      resultDiv.innerHTML = `<div class="error">Network error: ${err.message}</div>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Upload Photos';
+    }
+  });
+</script>
 </body>
 </html>
