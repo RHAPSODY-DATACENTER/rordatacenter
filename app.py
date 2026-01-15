@@ -1,7 +1,8 @@
-# app.py - Full updated version (January 2026)
-# Fixed delete_user endpoint to properly handle RealDictCursor result
-# All routes for upload pages included
-# Dashboard data endpoint improved for consistency
+# app.py - Full updated version with all fixes
+# - Corrected CSS paths (public/css_file/styles.css)
+# - Fixed delete_user endpoint (RealDictCursor dict access)
+# - All upload pages & API routes included
+# - Dashboard data endpoint safe & consistent
 
 import os
 import json
@@ -351,6 +352,33 @@ def dashboard_data():
         "campus": campus_stats,
         "church": church_stats
     })
+
+# =============== UPLOAD DATASET API ===============
+@app.route('/api/upload-dataset', methods=['POST'])
+@login_required
+def upload_dataset():
+    ministry = request.form.get('ministry')
+    if ministry not in ['campus', 'church']:
+        return jsonify({'error': 'Invalid ministry'}), 400
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    filename = secure_filename(file.filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+    saved_name = timestamp + filename
+    filepath = os.path.join(UPLOAD_FOLDER, saved_name)
+    file.save(filepath)
+
+    # Optional: process with converter (uncomment if needed)
+    # from db_converter import DatabaseConverter
+    # db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
+    # result = db.convert_excel_to_sql(filepath, ministry)
+
+    return jsonify({'success': True, 'message': 'Dataset uploaded successfully'})
 
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
