@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Dataset - ROR PARTNERSHIP DATAHUB</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+    }
+    .container {
+      max-width: 700px;
+      margin: 60px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 30px;
+    }
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back:hover {
+      text-decoration: underline;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    label {
+      font-weight: 600;
+      color: #003366;
+    }
+    select, input[type="file"] {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0055aa;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #fileName {
+      color: #555;
+      font-size: 0.95rem;
+      margin-top: 5px;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/admin" class="back">← Back to Dashboard</a>
+  <h1>Upload Dataset</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="ministry">Select Ministry:</label>
+    <select name="ministry" id="ministry" required>
+      <option value="">-- Choose Ministry --</option>
+      <option value="campus">BLW Campus Ministry</option>
+      <option value="church">Christ Embassy Church Ministry</option>
+    </select>
+
+    <label for="file">Choose Excel/CSV File:</label>
+    <input type="file" name="file" id="file" accept=".xlsx,.xls,.csv" required />
+    <p id="fileName"></p>
+
+    <button type="submit" id="uploadBtn">Upload Dataset</button>
+  </form>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  const form = document.getElementById('uploadForm');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const resultDiv = document.getElementById('result');
+  const fileInput = document.getElementById('file');
+  const fileNameDisplay = document.getElementById('fileName');
+
+  // Show selected file name
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      fileNameDisplay.textContent = `Selected: ${fileInput.files[0].name}`;
+    } else {
+      fileNameDisplay.textContent = '';
+    }
+  });
+
+  // Handle form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    resultDiv.innerHTML = '';
+
+    try {
+      const response = await fetch('/api/upload-dataset', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultDiv.innerHTML = `<div class="success">${data.message}</div>`;
+        form.reset();
+        fileNameDisplay.textContent = '';
+      } else {
+        resultDiv.innerHTML = `<div class="error">Error: ${data.error || 'Upload failed'}</div>`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload Dataset';
+    }
+  });
+</script>
+</body>
+</html>

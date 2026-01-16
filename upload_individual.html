@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Individual Record - ROR PARTNERSHIP DATAHUB</title>
+  <link rel="stylesheet" href="/public/css_file/styles.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 60px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 30px;
+    }
+    .back {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back:hover { text-decoration: underline; }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    form > * {
+      grid-column: span 2;
+    }
+    @media (min-width: 768px) {
+      form > *:not(:last-child) {
+        grid-column: span 1;
+      }
+    }
+    label {
+      font-weight: 600;
+      color: #003366;
+      display: block;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      grid-column: span 2;
+    }
+    button:hover { background: #0055aa; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      grid-column: span 2;
+    }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/admin" class="back">← Back to Dashboard</a>
+  <h1>Add / Update Individual Record</h1>
+
+  <form id="addRecordForm">
+    <div>
+      <label for="ministry">Ministry</label>
+      <select id="ministry" name="ministry" required>
+        <option value="">-- Select Ministry --</option>
+        <option value="campus">BLW Campus Ministry</option>
+        <option value="church">Christ Embassy Church Ministry</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="name">Name (Required)</label>
+      <input type="text" id="name" name="name" required placeholder="Full name">
+    </div>
+
+    <div>
+      <label for="region">Region</label>
+      <input type="text" id="region" name="region" placeholder="e.g. Lagos Region">
+    </div>
+
+    <div>
+      <label for="designation">Designation</label>
+      <input type="text" id="designation" name="designation" placeholder="e.g. Pastor, Zonal Secretary">
+    </div>
+
+    <div>
+      <label for="kc_id">KC ID</label>
+      <input type="text" id="kc_id" name="kc_id" placeholder="KC-XXXX">
+    </div>
+
+    <!-- Campus-specific fields -->
+    <div class="campus-fields" style="display: none;">
+      <label for="blw_zone">BLW Zone</label>
+      <input type="text" id="blw_zone" name="blw_zone" placeholder="e.g. Ikeja Zone">
+    </div>
+
+    <div class="campus-fields" style="display: none;">
+      <label for="chapter">Chapter</label>
+      <input type="text" id="chapter" name="chapter" placeholder="e.g. UNILAG Chapter">
+    </div>
+
+    <!-- Church-specific fields -->
+    <div class="church-fields" style="display: none;">
+      <label for="zone">Zone</label>
+      <input type="text" id="zone" name="zone" placeholder="e.g. Lagos Zone">
+    </div>
+
+    <div class="church-fields" style="display: none;">
+      <label for="church">Church</label>
+      <input type="text" id="church" name="church" placeholder="e.g. Christ Embassy Lagos">
+    </div>
+
+    <div>
+      <label for="group_name">Group Name</label>
+      <input type="text" id="group_name" name="group_name" placeholder="e.g. Youth Group">
+    </div>
+
+    <button type="submit" id="submitBtn">Add / Update Record</button>
+  </form>
+
+  <div id="result"></div>
+</div>
+
+<script>
+  const form = document.getElementById('addRecordForm');
+  const ministrySelect = document.getElementById('ministry');
+  const submitBtn = document.getElementById('submitBtn');
+  const resultDiv = document.getElementById('result');
+
+  // Show/hide ministry-specific fields
+  ministrySelect.addEventListener('change', () => {
+    const isCampus = ministrySelect.value === 'campus';
+    document.querySelectorAll('.campus-fields').forEach(el => el.style.display = isCampus ? 'block' : 'none');
+    document.querySelectorAll('.church-fields').forEach(el => el.style.display = isCampus ? 'none' : 'block');
+  });
+
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+    resultDiv.innerHTML = '';
+
+    try {
+      const response = await fetch('/api/add-record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        resultDiv.innerHTML = `<div class="success">${result.message || 'Record added/updated successfully!'}</div>`;
+        form.reset();
+        // Reset fields visibility
+        document.querySelectorAll('.campus-fields, .church-fields').forEach(el => el.style.display = 'none');
+      } else {
+        resultDiv.innerHTML = `<div class="error">Error: ${result.error || 'Failed to save record'}</div>`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add / Update Record';
+    }
+  });
+</script>
+</body>
+</html>

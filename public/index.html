@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ROR PARTNERSHIP DATAHUB</title>
+
+  <!-- Font Icons & Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Your Public CSS -->
+  <link rel="stylesheet" href="/public/css_file/styles.css">
+</head>
+
+<body>
+  <header class="nav">
+    <div class="brand">
+      <i class="fas fa-database"></i> ROR PARTNERSHIP DATAHUB
+    </div>
+    <nav class="nav-menu">
+      <a href="/" class="nav-link active">Home</a>
+      <a href="/public/search.html" class="nav-link">Search Data</a>
+    </nav>
+    <button class="menu-toggle">
+      <i class="fas fa-bars"></i>
+    </button>
+  </header>
+
+  <main id="app" class="container">
+
+    <!-- HOME VIEW -->
+    <section id="home-view" class="view active">
+      <section class="hero">
+        <div class="hero-content">
+          <h1 class="hero-title">Welcome to ROR PARTNERSHIP DATAHUB</h1>
+          <p class="hero-subtitle">Streamlined Data Collection & Management Platform</p>
+          <div class="hero-buttons">
+            <a href="/public/search.html" class="btn btn-primary">
+              <i class="fas fa-search"></i> Search Data
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="features">
+        <h2 class="section-title">Key Features</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-search"></i></div>
+            <h3>Search Data</h3>
+            <p>Find any pastor by name, designation, zone, region, chapter or group instantly from both ministries.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-images"></i></div>
+            <h3>Photo Gallery</h3>
+            <p>View up to 4 high-quality photos per record. Click any result to see all photos.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-users"></i></div>
+            <h3>Complete Records</h3>
+            <p>Full directory for BLW Campus and Christ Embassy Church Ministries.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat-item">
+          <h3 class="stat-number">10K+</h3>
+          <p class="stat-label">Records</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">50+</h3>
+          <p class="stat-label">Zones Covered</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">100%</h3>
+          <p class="stat-label">Accuracy</p>
+        </div>
+        <div class="stat-item">
+          <h3 class="stat-number">24/7</h3>
+          <p class="stat-label">Access</p>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>ROR PARTNERSHIP DATAHUB</h4>
+        <p>Official Directory & Data Management System</p>
+      </div>
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/public/search.html">Search Records</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p>Email: info@gpdportal.com</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 ROR PARTNERSHIP DATAHUB· All rights reserved
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu
+    document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+      document.querySelector('.nav-menu').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
