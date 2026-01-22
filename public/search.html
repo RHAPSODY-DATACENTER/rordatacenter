@@ -19,16 +19,14 @@
       color: #222;
     }
 
-    /* ===== SEARCH SECTION ===== */
     .search-section {
       max-width: 1200px;
       margin: auto;
       padding: 40px 20px;
     }
 
-    .search-section h1 {
+    h1 {
       font-size: 2.2rem;
-      font-weight: 700;
       color: #002b5c;
       margin-bottom: 20px;
     }
@@ -65,17 +63,13 @@
       border: none;
       padding: 14px 22px;
       border-radius: 10px;
-      font-size: 0.95rem;
       cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
     }
 
     #searchBtn:hover {
       background: #003f8a;
-      transform: translateY(-1px);
     }
 
-    /* ===== RESULTS ===== */
     .results-grid {
       margin-top: 40px;
       display: grid;
@@ -91,18 +85,11 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .person-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
     }
 
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
       gap: 12px;
     }
 
@@ -124,7 +111,6 @@
       border-radius: 8px;
       padding: 8px 10px;
       cursor: pointer;
-      transition: background 0.2s;
     }
 
     .action-btn:hover {
@@ -140,14 +126,8 @@
 
     .person-info p {
       margin: 0;
-      color: #444;
     }
 
-    .person-info strong {
-      color: #111;
-    }
-
-    /* ===== PHOTOS ===== */
     .person-photos {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -158,7 +138,6 @@
       position: relative;
       border-radius: 12px;
       overflow: hidden;
-      background: #f0f0f0;
     }
 
     .photo-container img {
@@ -181,23 +160,18 @@
       align-items: center;
       justify-content: center;
       text-decoration: none;
-      font-size: 13px;
     }
 
     .download-btn:hover {
       background: rgba(0,0,0,0.9);
     }
 
-    .loading,
-    .no-results,
-    .error {
+    .loading, .no-results, .error {
       text-align: center;
-      font-size: 1rem;
-      padding: 40px 20px;
+      padding: 40px;
       color: #666;
     }
 
-    /* ===== GALLERY MODAL ===== */
     #galleryModal {
       display: none;
       position: fixed;
@@ -217,7 +191,6 @@
     .gallery-img {
       max-width: 100%;
       max-height: 80vh;
-      object-fit: contain;
     }
 
     .gallery-nav {
@@ -228,8 +201,8 @@
       color: #fff;
       border: none;
       padding: 15px;
-      cursor: pointer;
       font-size: 1.8rem;
+      cursor: pointer;
     }
 
     #prevBtn { left: 20px; }
@@ -250,37 +223,23 @@
     <h1>Search Records</h1>
 
     <div class="search-container">
-      <input
-        type="search"
-        id="searchInput"
-        placeholder="Search by name or KC ID"
-        autocomplete="off"
-      >
-
+      <input type="search" id="searchInput" placeholder="Search by name or KC ID" autocomplete="off">
       <select id="ministrySelect">
         <option value="campus">BLW Campus Ministry</option>
         <option value="church">Christ Embassy Church Ministry</option>
       </select>
-
-      <button id="searchBtn">
-        <i class="fas fa-search"></i> Search
-      </button>
+      <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
     </div>
 
     <div id="results" class="results-grid"></div>
   </section>
 </main>
 
-<!-- GALLERY -->
 <div id="galleryModal">
   <div class="gallery-content">
-    <button id="prevBtn" class="gallery-nav">
-      <i class="fas fa-chevron-left"></i>
-    </button>
+    <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
     <img id="galleryImg" class="gallery-img">
-    <button id="nextBtn" class="gallery-nav">
-      <i class="fas fa-chevron-right"></i>
-    </button>
+    <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
     <p id="galleryCaption"></p>
   </div>
 </div>
@@ -291,32 +250,22 @@
   const searchBtn = document.getElementById('searchBtn');
   const resultsDiv = document.getElementById('results');
 
-  // Autofocus
-  window.addEventListener('load', () => searchInput.focus());
-
   searchBtn.addEventListener('click', performSearch);
-
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      performSearch();
-    }
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') performSearch();
   });
 
   async function performSearch() {
-    const q = searchInput.value.trim();
-    if (!q) {
-      resultsDiv.innerHTML = '<p class="no-results">Please enter a name or KC ID</p>';
-      return;
-    }
+    const query = searchInput.value.trim();
+    if (!query) return resultsDiv.innerHTML = '<p class="no-results">Enter a search term</p>';
 
-    resultsDiv.innerHTML = '<p class="loading">Searching…</p>';
+    resultsDiv.innerHTML = '<p class="loading">Searching...</p>';
 
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&ministry=${ministrySelect.value}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministrySelect.value}`);
       const data = await res.json();
       data.length ? displayResults(data) : resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
-    } catch (e) {
+    } catch {
       resultsDiv.innerHTML = '<p class="error">Search failed</p>';
     }
   }
@@ -324,57 +273,68 @@
   function displayResults(people) {
     resultsDiv.innerHTML = '';
 
-    people.forEach(p => {
+    people.forEach(person => {
       const card = document.createElement('div');
       card.className = 'person-card';
 
       card.innerHTML = `
         <div class="card-header">
-          <h2 class="person-name">${p.name}</h2>
+          <h2 class="person-name">${person.name}</h2>
           <div class="profile-actions">
-            <button class="action-btn" onclick="shareProfile('${p.name}','${p.kc_id || ''}')">
-              <i class="fab fa-whatsapp"></i>
-            </button>
-            <button class="action-btn" onclick="copyProfile('${p.name}','${p.kc_id || ''}')">
-              <i class="fas fa-copy"></i>
-            </button>
+            <button class="action-btn whatsapp"><i class="fab fa-whatsapp"></i></button>
+            <button class="action-btn copy"><i class="fas fa-copy"></i></button>
           </div>
         </div>
 
         <div class="person-info">
-          <p><strong>KC ID:</strong> ${p.kc_id || '—'}</p>
-          <p><strong>Designation:</strong> ${p.designation || '—'}</p>
-          <p><strong>Region:</strong> ${p.region || '—'}</p>
-          <p><strong>Group:</strong> ${p.group || '—'}</p>
+          <p><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
+          <p><strong>Designation:</strong> ${person.designation || '—'}</p>
+          <p><strong>Region:</strong> ${person.region || '—'}</p>
+          <p><strong>Group:</strong> ${person.group || '—'}</p>
         </div>
       `;
 
-      const photos = document.createElement('div');
-      photos.className = 'person-photos';
+      const photosDiv = document.createElement('div');
+      photosDiv.className = 'person-photos';
 
-      (p.all_photos || []).forEach((url, i) => {
-        photos.innerHTML += `
-          <div class="photo-container">
-            <img src="${url}" onclick="openGallery(${JSON.stringify(p.all_photos)},${i},'${p.name}')">
-            <a href="${url}" download class="download-btn">
-              <i class="fas fa-download"></i>
-            </a>
-          </div>
-        `;
-      });
+      if (person.all_photos && person.all_photos.length) {
+        person.all_photos.forEach((url, idx) => {
+          const container = document.createElement('div');
+          container.className = 'photo-container';
 
-      card.appendChild(photos);
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = `${person.name} photo ${idx + 1}`;
+          img.addEventListener('click', () => openGallery(person.all_photos, idx, person.name));
+
+          const dl = document.createElement('a');
+          dl.href = url;
+          dl.download = '';
+          dl.className = 'download-btn';
+          dl.innerHTML = '<i class="fas fa-download"></i>';
+
+          container.append(img, dl);
+          photosDiv.appendChild(container);
+        });
+      } else {
+        photosDiv.innerHTML = '<p class="no-photos">No photos available</p>';
+      }
+
+      card.appendChild(photosDiv);
       resultsDiv.appendChild(card);
+
+      card.querySelector('.whatsapp').onclick = () => shareProfile(person.name, person.kc_id);
+      card.querySelector('.copy').onclick = () => copyProfile(person.name, person.kc_id);
     });
   }
 
   function shareProfile(name, kc) {
-    const text = `ROR Partnership Record\nName: ${name}\nKC ID: ${kc}`;
+    const text = `ROR Partnership Record\nName: ${name}\nKC ID: ${kc || ''}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   }
 
   function copyProfile(name, kc) {
-    navigator.clipboard.writeText(`Name: ${name}\nKC ID: ${kc}`);
+    navigator.clipboard.writeText(`Name: ${name}\nKC ID: ${kc || ''}`);
     alert('Profile copied');
   }
 
@@ -385,16 +345,23 @@
     currentIndex = index;
     currentName = name;
     document.getElementById('galleryImg').src = photos[index];
-    document.getElementById('galleryCaption').textContent =
-      `${name} (${index + 1}/${photos.length})`;
+    document.getElementById('galleryCaption').textContent = `${name} (${index + 1}/${photos.length})`;
     document.getElementById('galleryModal').style.display = 'flex';
   }
 
   document.getElementById('galleryModal').addEventListener('click', e => {
-    if (e.target.id === 'galleryModal') {
-      e.currentTarget.style.display = 'none';
-    }
+    if (e.target.id === 'galleryModal') e.currentTarget.style.display = 'none';
   });
+
+  document.getElementById('prevBtn').onclick = () => {
+    currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
+    openGallery(currentPhotos, currentIndex, currentName);
+  };
+
+  document.getElementById('nextBtn').onclick = () => {
+    currentIndex = (currentIndex + 1) % currentPhotos.length;
+    openGallery(currentPhotos, currentIndex, currentName);
+  };
 </script>
 
 </body>
