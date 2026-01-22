@@ -19,9 +19,8 @@
       <i class="fas fa-database"></i> ROR PARTNERSHIP DATAHUB
     </div>
     <nav class="nav-menu">
-      <a data-view="home" class="nav-link active">Home</a>
-      <a data-view="search-data" class="nav-link">Search Data</a>
-      <a data-view="newsletter" class="nav-link">Newsletter</a>
+      <a href="/" class="nav-link active">Home</a>
+      <a href="/public/search.html" class="nav-link">Search Data</a>
     </nav>
     <button class="menu-toggle">
       <i class="fas fa-bars"></i>
@@ -37,9 +36,9 @@
           <h1 class="hero-title">Welcome to ROR PARTNERSHIP DATAHUB</h1>
           <p class="hero-subtitle">Streamlined Data Collection & Management Platform</p>
           <div class="hero-buttons">
-            <button class="btn btn-primary" data-view="search-data">
+            <a href="/public/search.html" class="btn btn-primary">
               <i class="fas fa-search"></i> Search Data
-            </button>
+            </a>
           </div>
         </div>
       </section>
@@ -85,38 +84,6 @@
       </section>
     </section>
 
-    <!-- SEARCH DATA VIEW -->
-    <section id="search-data-view" class="view">
-      <section class="dashboard-section search-dashboard">
-        <div class="search-inner">
-          <!-- Ministry Toggle -->
-          <div style="text-align:center; margin-bottom:30px;">
-            <button id="campus-btn" class="btn btn-primary" onclick="setMinistry('campus')">BLW Campus Ministry</button>
-            <button id="church-btn" class="btn" onclick="setMinistry('church')">Christ Embassy Church Ministry</button>
-          </div>
-
-          <div class="search-box">
-            <input 
-              id="search-input-hero" 
-              type="text" 
-              class="search-input-large" 
-              placeholder="Enter name, designation, zone, region, chapter, group or KC ID..." 
-              autocomplete="off"
-            >
-            <button id="search-btn-hero" class="btn btn-primary search-btn">
-              <i class="fas fa-search"></i> Search Now
-            </button>
-          </div>
-          <p style="text-align:center; margin-top:15px; color:#666;">
-            Type any part of the name, KC ID or title and click Search
-          </p>
-        </div>
-      </section>
-
-      <!-- SEARCH RESULTS WILL APPEAR HERE -->
-      <div id="search-results" style="min-height:200px;"></div>
-    </section>
-
   </main>
 
   <footer class="footer">
@@ -128,8 +95,8 @@
       <div class="footer-section">
         <h4>Quick Links</h4>
         <ul>
-          <li><a href="#" data-view="home">Home</a></li>
-          <li><a href="#" data-view="search-data">Search Records</a></li>
+          <li><a href="/">Home</a></li>
+          <li><a href="/public/search.html">Search Records</a></li>
         </ul>
       </div>
       <div class="footer-section">
@@ -142,150 +109,10 @@
     </div>
   </footer>
 
-  <!-- FULL-SCREEN GALLERY MODAL -->
-  <div id="galleryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
-    <span style="position:absolute; top:20px; right:40px; color:white; font-size:50px; font-weight:bold; cursor:pointer;" onclick="closeGallery()">&times;</span>
-    <div style="position:absolute; top:50%; left:30px; transform:translateY(-50%); color:white; font-size:60px; cursor:pointer; opacity:0.7;" onclick="prevImage()">&#10094;</div>
-    <div style="position:absolute; top:50%; right:30px; transform:translateY(-50%); color:white; font-size:60px; cursor:pointer; opacity:0.7;" onclick="nextImage()">&#10095;</div>
-    <img id="galleryImg" style="max-width:90%; max-height:85vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.8);" src="" alt="Photo">
-    <div id="galleryCaption" style="color:white; font-size:1.3rem; margin-top:20px;"></div>
-  </div>
-
   <script>
-    // Navigation
-    document.querySelectorAll('[data-view]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const view = link.getAttribute('data-view');
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(view + '-view')?.classList.add('active');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-      });
-    });
-
     // Mobile menu
     document.querySelector('.menu-toggle')?.addEventListener('click', () => {
       document.querySelector('.nav-menu').classList.toggle('open');
-    });
-
-    // Ministry toggle
-    let currentMinistry = 'campus';
-
-    function setMinistry(ministry) {
-      currentMinistry = ministry;
-      document.getElementById('campus-btn').classList.toggle('btn-primary', ministry === 'campus');
-      document.getElementById('church-btn').classList.toggle('btn-primary', ministry === 'church');
-    }
- 
-    // Search
-    document.getElementById('search-btn-hero')?.addEventListener('click', performSearch);
-    document.getElementById('search-input-hero')?.addEventListener('keypress', e => {
-      if (e.key === 'Enter') performSearch();
-    });
-
-    function performSearch() {
-      const query = document.getElementById('search-input-hero').value.trim();
-      const resultsDiv = document.getElementById('search-results');
-
-      if (!query) {
-        resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Please enter a search term</p>`;
-        return;
-      }
-
-      resultsDiv.innerHTML = `<p style="text-align:center; padding:40px; color:#003366;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>`;
-
-      fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
-        .then(res => res.json())
-        .then(data => {
-          resultsDiv.innerHTML = '';
-
-          if (data.length === 0) {
-            resultsDiv.innerHTML = `
-              <div style="text-align:center; padding:60px; color:#666;">
-                <i class="fas fa-search" style="font-size:48px; color:#ddd; margin-bottom:20px;"></i>
-                <p style="font-size:1.3rem;">No results found for "<strong>${query}</strong>" in ${currentMinistry === 'campus' ? 'BLW Campus' : 'Christ Embassy Church'} Ministry</p>
-              </div>`;
-            return;
-          }
-
-          const grid = document.createElement('div');
-          grid.style.cssText = `
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
-            margin: 30px 0;
-            max-width: 1200px;
-            margin: 0 auto;
-          `;
-
-          data.forEach(person => {
-            const photoCount = person.all_photos.length;
-            grid.innerHTML += `
-              <div class="result-card" style="cursor:pointer;" onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
-                <img src="${person.photo}" 
-                     onerror="this.src='/public/default-photo.jpg'"
-                     style="width:150px; height:150px; object-fit:cover; border-radius:50%; border:5px solid #003366; margin-bottom:15px;">
-                <h3 style="color:#003366; margin:10px 0;">${person.name}</h3>
-                <p style="margin:8px 0; color:#444;"><strong>Designation:</strong> ${person.designation || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Zone:</strong> ${person.zone || person.blw_zone || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Region:</strong> ${person.region || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Group:</strong> ${person.group || person.group_name || '—'}</p>
-                <p style="margin:8px 0; color:#444;"><strong>Chapter/Church:</strong> ${person.chapter || person.church || '—'}</p>
-                ${photoCount > 1 ? `<p style="margin-top:15px; color:#003366; font-weight:bold;">📸 Click to view all ${photoCount} photos</p>` : ''}
-              </div>
-            `;
-          });
-
-          resultsDiv.appendChild(grid);
-        })
-        .catch(err => {
-          console.error(err);
-          resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Error loading results. Please try again.</p>`;
-        });
-    }
-
-    // Gallery
-    let currentPhotos = [];
-    let currentIndex = 0;
-    let currentName = '';
-
-    function openGallery(photos, name) {
-      if (!photos || photos.length === 0) return;
-      currentPhotos = photos;
-      currentIndex = 0;
-      currentName = name;
-      document.getElementById('galleryImg').src = photos[0];
-      document.getElementById('galleryCaption').textContent = `${name} (1 of ${photos.length})`;
-      document.getElementById('galleryModal').style.display = 'flex';
-    }
-
-    function closeGallery() {
-      document.getElementById('galleryModal').style.display = 'none';
-    }
-
-    function nextImage() {
-      currentIndex = (currentIndex + 1) % currentPhotos.length;
-      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
-      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
-    }
-
-    function prevImage() {
-      currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
-      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
-      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
-    }
-
-    document.getElementById('galleryModal').onclick = e => {
-      if (e.target.id === 'galleryModal') closeGallery();
-    };
-
-    document.addEventListener('keydown', e => {
-      if (document.getElementById('galleryModal').style.display === 'none') return;
-      if (e.key === 'ArrowRight') nextImage();
-      if (e.key === 'ArrowLeft') prevImage();
-      if (e.key === 'Escape') closeGallery();
     });
   </script>
 </body>
