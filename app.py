@@ -1,4 +1,4 @@
-# app.py
+# app.py - Full updated version with image upload endpoint
 import os
 import json
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
@@ -9,6 +9,7 @@ from datetime import datetime
 from functools import wraps
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import sqlite3
 
 app = Flask(__name__)
 CORS(app)
@@ -50,7 +51,6 @@ def get_db_connection():
             print(f"[DB ERROR] Postgres connection failed: {str(e)}")
 
     print("[DB DEBUG] Falling back to local SQLite")
-    import sqlite3
     return sqlite3.connect(DATABASE_PATH)
 
 # === AUTO INITIALIZE DB ON STARTUP ===
@@ -349,7 +349,7 @@ def dashboard_data():
         "church": church_stats
     })
 
-# =============== UPLOAD DATASET API (NOW INSERTS TO DB) ===============
+# =============== UPLOAD DATASET ===============
 @app.route('/api/upload-dataset', methods=['POST'])
 @login_required
 def upload_dataset():
@@ -369,18 +369,90 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # Process file and insert into database
+    # Process file and insert into database (using db_converter)
     from db_converter import DatabaseConverter
     db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
     result = db.convert_excel_to_sql(filepath, ministry)
 
-    # Optional: clean up file after processing
+    # Clean up uploaded file
     try:
         os.remove(filepath)
     except:
         pass
 
     return jsonify(result)
+
+# =============== UPLOAD IMAGE (NOW FIXED) ===============
+@app.route('/api/upload-image', methods=['POST'])
+@login_required
+def upload_image():
+    ministry = request.form.get('ministry')
+    if ministry not in ['campus', 'church']:
+        return jsonify({'success': False, 'error': 'Invalid ministry'}), 400
+
+    images_folder = CAMPUS_IMAGES_FOLDER if ministry == 'campus' else CHURCH_IMAGES_FOLDER
+    table = 'campus_records' if ministry == 'campus' else 'church_records'
+
+    if 'images' not in request.files:
+        return jsonify({'success': False, 'error': 'No images uploaded'}), 400
+
+    files = request.files.getlist('images')
+    valid_files = [f for f in files if f.filename != '']
+    if len(valid_files) == 0:
+        return jsonify({'success': False, 'error': 'No valid images'}), 400
+    if len(valid_files) > 4:
+        return jsonify({'success': False, 'error': 'Maximum 4 images allowed'}), 400
+
+    name = request.form.get('name', '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'Record name is required'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Check if record exists
+    cur.execute(f"SELECT images_json FROM {table} WHERE LOWER(name) = LOWER(%s)", (name,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False, 'error': f'Record "{name}" not found in {ministry} ministry'}), 404
+
+    current_images = json.loads(row['images_json']) if row['images_json'] else []
+
+    saved_paths = []
+    for file in valid_files:
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in {'.jpg', '.jpeg', '.png', '.webp', '.gif'}:
+            continue
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        safe_name = secure_filename(name.replace(' ', '_'))
+        filename = f"{safe_name}_{timestamp}{ext}"
+        filepath = os.path.join(images_folder, filename)
+        file.save(filepath)
+
+        prefix = 'campus' if ministry == 'campus' else 'church'
+        public_url = f"/images/{prefix}/{filename}"
+        saved_paths.append(public_url)
+
+    if not saved_paths:
+        conn.close()
+        return jsonify({'success': False, 'error': 'No valid images uploaded'}), 400
+
+    # Append new images (keep only the last 4 total)
+    all_images = current_images + saved_paths
+    final_images = all_images[-4:]
+
+    # Update database
+    cur.execute(f"UPDATE {table} SET images_json = %s WHERE LOWER(name) = LOWER(%s)",
+                (json.dumps(final_images), name))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'success': True,
+        'message': f'Successfully uploaded {len(saved_paths)} image(s). Total photos now: {len(final_images)}'
+    })
 
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
