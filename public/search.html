@@ -3,175 +3,82 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ROR Partnership DataHub – Search</title>
+  <title>ROR PARTNERSHIP DATAHUB - Search Data</title>
 
-  <!-- Icons & Fonts -->
+  <!-- Font Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+  <!-- Your Public CSS -->
+  <link rel="stylesheet" href="/public/css_file/styles.css">
+
   <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: #f4f6f9;
-      color: #222;
-    }
-
-    .search-section {
-      max-width: 1200px;
-      margin: auto;
-      padding: 40px 20px;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      color: #002b5c;
-      margin-bottom: 20px;
-    }
-
-    .search-container {
-      display: flex;
-      gap: 12px;
-      background: #fff;
-      padding: 16px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      flex-wrap: wrap;
-    }
-
-    .search-container input,
-    .search-container select {
-      flex: 1;
-      min-width: 220px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      font-size: 0.95rem;
-    }
-
-    .search-container input:focus,
-    .search-container select:focus {
-      outline: none;
-      border-color: #0056b3;
-    }
-
-    #searchBtn {
-      background: #0056b3;
-      color: #fff;
-      border: none;
-      padding: 14px 22px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    #searchBtn:hover {
-      background: #003f8a;
-    }
-
-    .results-grid {
-      margin-top: 40px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 24px;
-    }
-
     .person-card {
-      background: #fff;
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
     .person-name {
-      font-size: 1.4rem;
-      font-weight: 700;
+      font-size: 1.6rem;
       color: #003366;
-      margin: 0;
+      margin: 0 0 10px;
     }
-
-    .profile-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .action-btn {
-      background: #f1f4f8;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 10px;
-      cursor: pointer;
-    }
-
-    .action-btn:hover {
-      background: #e0e7ef;
-    }
-
-    .person-info {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px 16px;
-      font-size: 0.9rem;
-    }
-
     .person-info p {
-      margin: 0;
+      margin: 6px 0;
+      color: #444;
     }
-
     .person-photos {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 12px;
+      margin-top: 15px;
     }
-
     .photo-container {
       position: relative;
-      border-radius: 12px;
+      width: 140px;
+      height: 140px;
+      border-radius: 8px;
       overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-
     .photo-container img {
       width: 100%;
-      height: 110px;
+      height: 100%;
       object-fit: cover;
       cursor: pointer;
+      transition: transform 0.2s;
     }
-
+    .photo-container img:hover {
+      transform: scale(1.05);
+    }
     .download-btn {
       position: absolute;
-      bottom: 6px;
-      right: 6px;
-      background: rgba(0,0,0,0.65);
-      color: #fff;
-      width: 30px;
-      height: 30px;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
+      font-size: 14px;
+      opacity: 0.9;
+      transition: opacity 0.2s, background 0.2s;
     }
-
     .download-btn:hover {
-      background: rgba(0,0,0,0.9);
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.9);
     }
-
-    .loading, .no-results, .error {
-      text-align: center;
-      padding: 40px;
-      color: #666;
+    .no-photos {
+      color: #777;
+      font-style: italic;
     }
-
+    /* Gallery Modal (existing styles - keep or adjust) */
     #galleryModal {
       display: none;
       position: fixed;
@@ -181,188 +88,212 @@
       justify-content: center;
       align-items: center;
     }
-
     .gallery-content {
       position: relative;
       max-width: 90%;
       max-height: 90vh;
     }
-
     .gallery-img {
       max-width: 100%;
       max-height: 80vh;
+      object-fit: contain;
     }
-
     .gallery-nav {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       background: rgba(0,0,0,0.5);
-      color: #fff;
+      color: white;
       border: none;
       padding: 15px;
-      font-size: 1.8rem;
       cursor: pointer;
+      font-size: 1.8rem;
     }
-
     #prevBtn { left: 20px; }
     #nextBtn { right: 20px; }
-
     #galleryCaption {
-      color: #fff;
+      color: white;
       text-align: center;
-      margin-top: 12px;
+      margin-top: 15px;
+      font-size: 1.1rem;
     }
   </style>
 </head>
 
 <body>
+  <header class="nav">
+    <!-- Your existing header/nav code here -->
+  </header>
 
-<main>
-  <section class="search-section">
-    <h1>Search Records</h1>
+  <main>
+    <section class="search-section">
+      <h1>Search Records</h1>
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search by name or KC ID..." autocomplete="off">
+        <select id="ministrySelect">
+          <option value="campus">BLW Campus Ministry</option>
+          <option value="church">Christ Embassy Church Ministry</option>
+        </select>
+        <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
+      </div>
 
-    <div class="search-container">
-      <input type="search" id="searchInput" placeholder="Search by name or KC ID" autocomplete="off">
-      <select id="ministrySelect">
-        <option value="campus">BLW Campus Ministry</option>
-        <option value="church">Christ Embassy Church Ministry</option>
-      </select>
-      <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
+      <div id="results" class="results-grid"></div>
+    </section>
+  </main>
+
+  <!-- Gallery Modal -->
+  <div id="galleryModal">
+    <div class="gallery-content">
+      <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
+      <img id="galleryImg" class="gallery-img" src="" alt="Gallery">
+      <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
+      <p id="galleryCaption"></p>
     </div>
-
-    <div id="results" class="results-grid"></div>
-  </section>
-</main>
-
-<div id="galleryModal">
-  <div class="gallery-content">
-    <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
-    <img id="galleryImg" class="gallery-img">
-    <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
-    <p id="galleryCaption"></p>
   </div>
-</div>
 
-<script>
-  const searchInput = document.getElementById('searchInput');
-  const ministrySelect = document.getElementById('ministrySelect');
-  const searchBtn = document.getElementById('searchBtn');
-  const resultsDiv = document.getElementById('results');
+  <footer>
+    <!-- Your existing footer code here -->
+  </footer>
 
-  searchBtn.addEventListener('click', performSearch);
-  searchInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') performSearch();
-  });
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const ministrySelect = document.getElementById('ministrySelect');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsDiv = document.getElementById('results');
 
-  async function performSearch() {
-    const query = searchInput.value.trim();
-    if (!query) return resultsDiv.innerHTML = '<p class="no-results">Enter a search term</p>';
+    // Search on button click or Enter key
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') performSearch();
+    });
 
-    resultsDiv.innerHTML = '<p class="loading">Searching...</p>';
+    async function performSearch() {
+      const query = searchInput.value.trim();
+      const ministry = ministrySelect.value;
 
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministrySelect.value}`);
-      const data = await res.json();
-      data.length ? displayResults(data) : resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
-    } catch {
-      resultsDiv.innerHTML = '<p class="error">Search failed</p>';
-    }
-  }
-
-  function displayResults(people) {
-    resultsDiv.innerHTML = '';
-
-    people.forEach(person => {
-      const card = document.createElement('div');
-      card.className = 'person-card';
-
-      card.innerHTML = `
-        <div class="card-header">
-          <h2 class="person-name">${person.name}</h2>
-          <div class="profile-actions">
-            <button class="action-btn whatsapp"><i class="fab fa-whatsapp"></i></button>
-            <button class="action-btn copy"><i class="fas fa-copy"></i></button>
-          </div>
-        </div>
-
-        <div class="person-info">
-          <p><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
-          <p><strong>Designation:</strong> ${person.designation || '—'}</p>
-          <p><strong>Region:</strong> ${person.region || '—'}</p>
-          <p><strong>Group:</strong> ${person.group || '—'}</p>
-        </div>
-      `;
-
-      const photosDiv = document.createElement('div');
-      photosDiv.className = 'person-photos';
-
-      if (person.all_photos && person.all_photos.length) {
-        person.all_photos.forEach((url, idx) => {
-          const container = document.createElement('div');
-          container.className = 'photo-container';
-
-          const img = document.createElement('img');
-          img.src = url;
-          img.alt = `${person.name} photo ${idx + 1}`;
-          img.addEventListener('click', () => openGallery(person.all_photos, idx, person.name));
-
-          const dl = document.createElement('a');
-          dl.href = url;
-          dl.download = '';
-          dl.className = 'download-btn';
-          dl.innerHTML = '<i class="fas fa-download"></i>';
-
-          container.append(img, dl);
-          photosDiv.appendChild(container);
-        });
-      } else {
-        photosDiv.innerHTML = '<p class="no-photos">No photos available</p>';
+      if (!query) {
+        resultsDiv.innerHTML = '<p class="no-results">Please enter a name or KC ID</p>';
+        return;
       }
 
-      card.appendChild(photosDiv);
-      resultsDiv.appendChild(card);
+      resultsDiv.innerHTML = '<p class="loading">Searching...</p>';
 
-      card.querySelector('.whatsapp').onclick = () => shareProfile(person.name, person.kc_id);
-      card.querySelector('.copy').onclick = () => copyProfile(person.name, person.kc_id);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministry}`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
+          return;
+        }
+
+        displayResults(data);
+      } catch (err) {
+        resultsDiv.innerHTML = '<p class="error">Error searching records</p>';
+        console.error(err);
+      }
+    }
+
+    function displayResults(people) {
+      resultsDiv.innerHTML = '';
+
+      people.forEach(person => {
+        const card = document.createElement('div');
+        card.className = 'person-card';
+
+        card.innerHTML = `
+          <h2 class="person-name">${person.name}</h2>
+          <div class="person-info">
+            <p><strong>Designation:</strong> ${person.designation || '—'}</p>
+            <p><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
+            <p><strong>Region:</strong> ${person.region || '—'}</p>
+            <p><strong>Group:</strong> ${person.group || '—'}</p>
+            ${person.zone ? `<p><strong>Zone:</strong> ${person.zone}</p>` : ''}
+            ${person.chapter ? `<p><strong>Chapter:</strong> ${person.chapter}</p>` : ''}
+          </div>
+        `;
+
+        // Photos with download buttons
+        const photosDiv = document.createElement('div');
+        photosDiv.className = 'person-photos';
+
+        if (person.all_photos && person.all_photos.length > 0) {
+          person.all_photos.forEach((photoUrl, idx) => {
+            const container = document.createElement('div');
+            container.className = 'photo-container';
+
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.alt = `${person.name} photo ${idx + 1}`;
+            img.onclick = () => openGallery(person.all_photos, idx, person.name);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = photoUrl;
+            downloadLink.download = `${person.name.replace(/\s+/g, '_')}_photo_${idx + 1}${photoUrl.substring(photoUrl.lastIndexOf('.')) || '.jpg'}`;
+            downloadLink.className = 'download-btn';
+            downloadLink.innerHTML = '<i class="fas fa-download"></i>';
+            downloadLink.title = 'Download this photo';
+
+            container.appendChild(img);
+            container.appendChild(downloadLink);
+            photosDiv.appendChild(container);
+          });
+        } else {
+          photosDiv.innerHTML = '<p class="no-photos">No photos available</p>';
+        }
+
+        card.appendChild(photosDiv);
+        resultsDiv.appendChild(card);
+      });
+    }
+
+    // Gallery functions (unchanged - keeping your original)
+    let currentPhotos = [];
+    let currentIndex = 0;
+    let currentName = '';
+
+    function openGallery(photos, index, name) {
+      currentPhotos = photos;
+      currentIndex = index;
+      currentName = name;
+
+      document.getElementById('galleryImg').src = photos[index];
+      document.getElementById('galleryCaption').textContent = `${name} (${index + 1} of ${photos.length})`;
+      document.getElementById('galleryModal').style.display = 'flex';
+    }
+
+    function closeGallery() {
+      document.getElementById('galleryModal').style.display = 'none';
+    }
+
+    function nextImage() {
+      currentIndex = (currentIndex + 1) % currentPhotos.length;
+      updateGalleryImage();
+    }
+
+    function prevImage() {
+      currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
+      updateGalleryImage();
+    }
+
+    function updateGalleryImage() {
+      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
+      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
+    }
+
+    document.getElementById('galleryModal').onclick = e => {
+      if (e.target.id === 'galleryModal') closeGallery();
+    };
+
+    document.getElementById('prevBtn').onclick = prevImage;
+    document.getElementById('nextBtn').onclick = nextImage;
+
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('galleryModal').style.display === 'none') return;
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'Escape') closeGallery();
     });
-  }
-
-  function shareProfile(name, kc) {
-    const text = `ROR Partnership Record\nName: ${name}\nKC ID: ${kc || ''}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
-  }
-
-  function copyProfile(name, kc) {
-    navigator.clipboard.writeText(`Name: ${name}\nKC ID: ${kc || ''}`);
-    alert('Profile copied');
-  }
-
-  let currentPhotos = [], currentIndex = 0, currentName = '';
-
-  function openGallery(photos, index, name) {
-    currentPhotos = photos;
-    currentIndex = index;
-    currentName = name;
-    document.getElementById('galleryImg').src = photos[index];
-    document.getElementById('galleryCaption').textContent = `${name} (${index + 1}/${photos.length})`;
-    document.getElementById('galleryModal').style.display = 'flex';
-  }
-
-  document.getElementById('galleryModal').addEventListener('click', e => {
-    if (e.target.id === 'galleryModal') e.currentTarget.style.display = 'none';
-  });
-
-  document.getElementById('prevBtn').onclick = () => {
-    currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
-    openGallery(currentPhotos, currentIndex, currentName);
-  };
-
-  document.getElementById('nextBtn').onclick = () => {
-    currentIndex = (currentIndex + 1) % currentPhotos.length;
-    openGallery(currentPhotos, currentIndex, currentName);
-  };
-</script>
-
+  </script>
 </body>
 </html>
