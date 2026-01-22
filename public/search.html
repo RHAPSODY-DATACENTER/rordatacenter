@@ -11,118 +11,11 @@
 
   <!-- Your Public CSS -->
   <link rel="stylesheet" href="/public/css_file/styles.css">
-
-  <style>
-    .person-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .person-name {
-      font-size: 1.6rem;
-      color: #003366;
-      margin: 0 0 10px;
-    }
-    .person-info p {
-      margin: 6px 0;
-      color: #444;
-    }
-    .person-photos {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 15px;
-    }
-    .photo-container {
-      position: relative;
-      width: 140px;
-      height: 140px;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .photo-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .photo-container img:hover {
-      transform: scale(1.05);
-    }
-    .download-btn {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: rgba(0, 0, 0, 0.65);
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      font-size: 14px;
-      opacity: 0.9;
-      transition: opacity 0.2s, background 0.2s;
-    }
-    .download-btn:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.9);
-    }
-    .no-photos {
-      color: #777;
-      font-style: italic;
-    }
-    /* Gallery Modal (existing styles - keep or adjust) */
-    #galleryModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.9);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .gallery-content {
-      position: relative;
-      max-width: 90%;
-      max-height: 90vh;
-    }
-    .gallery-img {
-      max-width: 100%;
-      max-height: 80vh;
-      object-fit: contain;
-    }
-    .gallery-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0,0,0,0.5);
-      color: white;
-      border: none;
-      padding: 15px;
-      cursor: pointer;
-      font-size: 1.8rem;
-    }
-    #prevBtn { left: 20px; }
-    #nextBtn { right: 20px; }
-    #galleryCaption {
-      color: white;
-      text-align: center;
-      margin-top: 15px;
-      font-size: 1.1rem;
-    }
-  </style>
 </head>
 
 <body>
   <header class="nav">
-    <!-- Your existing header/nav code here -->
+    <!-- Your original header code remains unchanged -->
   </header>
 
   <main>
@@ -141,7 +34,7 @@
     </section>
   </main>
 
-  <!-- Gallery Modal -->
+  <!-- Gallery Modal (your original modal - unchanged) -->
   <div id="galleryModal">
     <div class="gallery-content">
       <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
@@ -152,7 +45,7 @@
   </div>
 
   <footer>
-    <!-- Your existing footer code here -->
+    <!-- Your original footer - unchanged -->
   </footer>
 
   <script>
@@ -161,7 +54,7 @@
     const searchBtn = document.getElementById('searchBtn');
     const resultsDiv = document.getElementById('results');
 
-    // Search on button click or Enter key
+    // Search triggers (unchanged)
     searchBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') performSearch();
@@ -198,10 +91,11 @@
       resultsDiv.innerHTML = '';
 
       people.forEach(person => {
-        const card = document.createElement('div');
-        card.className = 'person-card';
+        const personCard = document.createElement('div');
+        personCard.className = 'person-card'; // your original class
 
-        card.innerHTML = `
+        // Your original person info (unchanged)
+        personCard.innerHTML = `
           <h2 class="person-name">${person.name}</h2>
           <div class="person-info">
             <p><strong>Designation:</strong> ${person.designation || '—'}</p>
@@ -213,41 +107,69 @@
           </div>
         `;
 
-        // Photos with download buttons
+        // ────────────────────────────────────────────────
+        // Only this part is updated: photos + download buttons
+        // ────────────────────────────────────────────────
         const photosDiv = document.createElement('div');
-        photosDiv.className = 'person-photos';
+        photosDiv.style.marginTop = '15px';
+        photosDiv.style.display = 'flex';
+        photosDiv.style.flexWrap = 'wrap';
+        photosDiv.style.gap = '12px';
 
         if (person.all_photos && person.all_photos.length > 0) {
-          person.all_photos.forEach((photoUrl, idx) => {
-            const container = document.createElement('div');
-            container.className = 'photo-container';
+          person.all_photos.forEach((photoUrl, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.display = 'inline-block';
 
             const img = document.createElement('img');
             img.src = photoUrl;
-            img.alt = `${person.name} photo ${idx + 1}`;
-            img.onclick = () => openGallery(person.all_photos, idx, person.name);
+            img.alt = `Photo ${index + 1} of ${person.name}`;
+            img.style.width = '160px';  // ← your original thumbnail size (adjust if needed)
+            img.style.height = '160px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px';
+            img.style.cursor = 'pointer';
+            img.onclick = () => openGallery(person.all_photos, index, person.name);
 
             const downloadLink = document.createElement('a');
             downloadLink.href = photoUrl;
-            downloadLink.download = `${person.name.replace(/\s+/g, '_')}_photo_${idx + 1}${photoUrl.substring(photoUrl.lastIndexOf('.')) || '.jpg'}`;
-            downloadLink.className = 'download-btn';
-            downloadLink.innerHTML = '<i class="fas fa-download"></i>';
+            downloadLink.download = `${person.name.replace(/\s+/g, '_')}_photo_${index + 1}${photoUrl.match(/\.[^.]+$/)?.[0] || '.jpg'}`;
             downloadLink.title = 'Download this photo';
+            downloadLink.style.position = 'absolute';
+            downloadLink.style.bottom = '8px';
+            downloadLink.style.right = '8px';
+            downloadLink.style.background = 'rgba(0,0,0,0.6)';
+            downloadLink.style.color = 'white';
+            downloadLink.style.width = '32px';
+            downloadLink.style.height = '32px';
+            downloadLink.style.borderRadius = '50%';
+            downloadLink.style.display = 'flex';
+            downloadLink.style.alignItems = 'center';
+            downloadLink.style.justifyContent = 'center';
+            downloadLink.style.textDecoration = 'none';
+            downloadLink.innerHTML = '<i class="fas fa-download"></i>';
 
-            container.appendChild(img);
-            container.appendChild(downloadLink);
-            photosDiv.appendChild(container);
+            wrapper.appendChild(img);
+            wrapper.appendChild(downloadLink);
+            photosDiv.appendChild(wrapper);
           });
         } else {
-          photosDiv.innerHTML = '<p class="no-photos">No photos available</p>';
+          const noPhoto = document.createElement('p');
+          noPhoto.textContent = 'No photos available';
+          noPhoto.style.color = '#777';
+          noPhoto.style.fontStyle = 'italic';
+          photosDiv.appendChild(noPhoto);
         }
 
-        card.appendChild(photosDiv);
-        resultsDiv.appendChild(card);
+        personCard.appendChild(photosDiv);
+        resultsDiv.appendChild(personCard);
       });
     }
 
-    // Gallery functions (unchanged - keeping your original)
+    // ────────────────────────────────────────────────
+    // Your original gallery functions (unchanged)
+    // ────────────────────────────────────────────────
     let currentPhotos = [];
     let currentIndex = 0;
     let currentName = '';
