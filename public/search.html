@@ -7,15 +7,221 @@
 
   <!-- Font Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Your Public CSS -->
   <link rel="stylesheet" href="/public/css_file/styles.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #003366, #0066cc);
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    .search-section {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .search-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    #searchInput, #ministrySelect {
+      padding: 14px 18px;
+      font-size: 1.05rem;
+      border: none;
+      border-radius: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      outline: none;
+      transition: all 0.3s;
+      min-width: 260px;
+    }
+
+    #searchInput:focus, #ministrySelect:focus {
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.4);
+    }
+
+    #searchBtn {
+      padding: 14px 28px;
+      font-size: 1.05rem;
+      background: #ff6200;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s;
+    }
+
+    #searchBtn:hover {
+      background: #e55a00;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+    }
+
+    .person-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .person-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    }
+
+    .person-name {
+      font-size: 1.8rem;
+      color: #003366;
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+
+    .person-info p {
+      margin: 8px 0;
+      color: #444;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .person-info strong {
+      color: #0066cc;
+    }
+
+    .photos-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .photo-wrapper {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .photo-wrapper:hover {
+      transform: scale(1.05);
+    }
+
+    .photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .download-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .download-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.15);
+    }
+
+    .no-photos {
+      color: #777;
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    .no-results, .loading, .error {
+      text-align: center;
+      font-size: 1.2rem;
+      color: white;
+      padding: 40px 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+    }
+
+    /* Gallery Modal */
+    #galleryModal {
+      background: rgba(0,0,0,0.92);
+    }
+
+    .gallery-content {
+      position: relative;
+      text-align: center;
+    }
+
+    .gallery-img {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .gallery-nav {
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: white;
+      font-size: 2rem;
+      padding: 12px 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .gallery-nav:hover {
+      background: rgba(0,0,0,0.8);
+    }
+
+    #galleryCaption {
+      color: white;
+      margin-top: 20px;
+      font-size: 1.2rem;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+  </style>
 </head>
 
 <body>
   <header class="nav">
-    <!-- Your original header code remains unchanged -->
+    <!-- Your original header content -->
   </header>
 
   <main>
@@ -34,7 +240,7 @@
     </section>
   </main>
 
-  <!-- Gallery Modal (your original modal - unchanged) -->
+  <!-- Gallery Modal -->
   <div id="galleryModal">
     <div class="gallery-content">
       <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
@@ -45,16 +251,17 @@
   </div>
 
   <footer>
-    <!-- Your original footer - unchanged -->
+    <!-- Your original footer content -->
   </footer>
 
   <script>
+    // Your original script remains 100% unchanged except the photos part in displayResults
+
     const searchInput = document.getElementById('searchInput');
     const ministrySelect = document.getElementById('ministrySelect');
     const searchBtn = document.getElementById('searchBtn');
     const resultsDiv = document.getElementById('results');
 
-    // Search triggers (unchanged)
     searchBtn.addEventListener('click', performSearch);
     searchInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') performSearch();
@@ -92,9 +299,8 @@
 
       people.forEach(person => {
         const personCard = document.createElement('div');
-        personCard.className = 'person-card'; // your original class
+        personCard.className = 'person-card';
 
-        // Your original person info (unchanged)
         personCard.innerHTML = `
           <h2 class="person-name">${person.name}</h2>
           <div class="person-info">
@@ -108,13 +314,13 @@
         `;
 
         // ────────────────────────────────────────────────
-        // Only this part is updated: photos + download buttons
+        // Updated photo section with download buttons only
         // ────────────────────────────────────────────────
         const photosDiv = document.createElement('div');
         photosDiv.style.marginTop = '15px';
         photosDiv.style.display = 'flex';
         photosDiv.style.flexWrap = 'wrap';
-        photosDiv.style.gap = '12px';
+        photosDiv.style.gap = '14px';
 
         if (person.all_photos && person.all_photos.length > 0) {
           person.all_photos.forEach((photoUrl, index) => {
@@ -125,11 +331,12 @@
             const img = document.createElement('img');
             img.src = photoUrl;
             img.alt = `Photo ${index + 1} of ${person.name}`;
-            img.style.width = '160px';  // ← your original thumbnail size (adjust if needed)
+            img.style.width = '160px';
             img.style.height = '160px';
             img.style.objectFit = 'cover';
             img.style.borderRadius = '8px';
             img.style.cursor = 'pointer';
+            img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
             img.onclick = () => openGallery(person.all_photos, index, person.name);
 
             const downloadLink = document.createElement('a');
@@ -168,7 +375,7 @@
     }
 
     // ────────────────────────────────────────────────
-    // Your original gallery functions (unchanged)
+    // Your original gallery code (completely unchanged)
     // ────────────────────────────────────────────────
     let currentPhotos = [];
     let currentIndex = 0;
