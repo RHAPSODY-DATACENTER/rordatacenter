@@ -3,297 +3,352 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ROR PARTNERSHIP DATAHUB - Search Data</title>
+  <title>ROR Partnership DataHub – Search</title>
 
-  <!-- Font Icons & Fonts -->
+  <!-- Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Your Public CSS -->
-  <link rel="stylesheet" href="/public/css_file/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --primary: #003366;
-      --primary-dark: #002244;
-      --accent: #0066cc;
-      --accent-light: #3399ff;
-      --bg-gradient: linear-gradient(135deg, #003366, #0066cc);
-      --card-bg: rgba(255, 255, 255, 0.97);
-      --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
-      background: var(--bg-gradient);
+      background: #f4f6f9;
       color: #222;
-      min-height: 100vh;
     }
 
-    header.nav {
-      background: var(--primary);
-      padding: 1rem 2rem;
-      color: white;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    h1 {
-      color: white;
-      text-align: center;
-      font-size: 2.6rem;
-      font-weight: 600;
-      margin: 2rem 0 1.5rem;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    }
-
+    /* ===== SEARCH SECTION ===== */
     .search-section {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 2.5rem;
-      box-shadow: var(--shadow);
-      margin-bottom: 2.5rem;
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .search-section h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #002b5c;
+      margin-bottom: 20px;
     }
 
     .search-container {
       display: flex;
+      gap: 12px;
+      background: #fff;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      align-items: center;
     }
 
-    #searchInput {
+    .search-container input,
+    .search-container select {
       flex: 1;
-      min-width: 280px;
-      max-width: 500px;
-      padding: 0.9rem 1.4rem;
-      font-size: 1.05rem;
-      border: 2px solid #ddd;
-      border-radius: 50px;
-      outline: none;
-      transition: all 0.3s ease;
-    }
-
-    #searchInput:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.15);
-    }
-
-    #ministrySelect {
-      padding: 0.9rem 1.2rem;
-      font-size: 1.05rem;
-      border: 2px solid #ddd;
-      border-radius: 50px;
-      background: white;
       min-width: 220px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 0.95rem;
+    }
+
+    .search-container input:focus,
+    .search-container select:focus {
+      outline: none;
+      border-color: #0056b3;
     }
 
     #searchBtn {
-      padding: 0.9rem 2rem;
-      font-size: 1.05rem;
-      background: var(--accent);
-      color: white;
+      background: #0056b3;
+      color: #fff;
       border: none;
-      border-radius: 50px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 0.95rem;
       cursor: pointer;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+      transition: background 0.2s, transform 0.15s;
     }
 
     #searchBtn:hover {
-      background: var(--primary);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 51, 102, 0.3);
+      background: #003f8a;
+      transform: translateY(-1px);
     }
 
+    /* ===== RESULTS ===== */
     .results-grid {
+      margin-top: 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 1.8rem;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
     }
 
     .person-card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 1.8rem;
-      box-shadow: var(--shadow);
-      transition: all 0.25s ease;
+      background: #fff;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .person-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
     }
 
     .person-name {
-      font-size: 1.7rem;
-      color: var(--primary);
-      margin: 0 0 1rem;
-      font-weight: 600;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #003366;
+      margin: 0;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      background: #f1f4f8;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #e0e7ef;
+    }
+
+    .person-info {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 16px;
+      font-size: 0.9rem;
     }
 
     .person-info p {
-      margin: 0.6rem 0;
-      font-size: 1rem;
+      margin: 0;
       color: #444;
-      line-height: 1.6;
     }
 
     .person-info strong {
-      color: var(--accent);
+      color: #111;
     }
 
-    .photos-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem;
-      margin-top: 1.5rem;
+    /* ===== PHOTOS ===== */
+    .person-photos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
     }
 
-    .photo-wrapper {
+    .photo-container {
       position: relative;
-      width: 160px;
-      height: 160px;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
+      background: #f0f0f0;
     }
 
-    .photo-wrapper:hover {
-      transform: scale(1.06);
-    }
-
-    .photo-wrapper img {
+    .photo-container img {
       width: 100%;
-      height: 100%;
+      height: 110px;
       object-fit: cover;
       cursor: pointer;
     }
 
     .download-btn {
       position: absolute;
-      bottom: 10px;
-      right: 10px;
+      bottom: 6px;
+      right: 6px;
       background: rgba(0,0,0,0.65);
-      color: white;
-      width: 36px;
-      height: 36px;
+      color: #fff;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
-      font-size: 1.1rem;
-      transition: all 0.2s;
+      font-size: 13px;
     }
 
     .download-btn:hover {
       background: rgba(0,0,0,0.9);
-      transform: scale(1.15);
     }
 
-    .no-photos, .no-results, .loading, .error {
+    .loading, .no-results, .error {
       text-align: center;
-      padding: 2rem;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.15);
-      color: white;
-      font-size: 1.2rem;
-      margin: 2rem 0;
+      font-size: 1rem;
+      padding: 40px 20px;
+      color: #666;
     }
 
-    /* Gallery Modal */
+    /* ===== GALLERY MODAL ===== */
     #galleryModal {
-      background: rgba(0,0,0,0.92);
-      backdrop-filter: blur(4px);
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .gallery-content {
+      position: relative;
+      max-width: 90%;
+      max-height: 90vh;
     }
 
     .gallery-img {
-      max-width: 90vw;
-      max-height: 82vh;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
     }
 
     .gallery-nav {
-      background: rgba(0,0,0,0.6);
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
       border: none;
-      color: white;
-      font-size: 2.2rem;
-      padding: 14px 20px;
-      border-radius: 50%;
+      padding: 15px;
       cursor: pointer;
-      transition: all 0.3s;
+      font-size: 1.8rem;
     }
 
-    .gallery-nav:hover {
-      background: rgba(0,0,0,0.85);
-      transform: scale(1.1);
-    }
+    #prevBtn { left: 20px; }
+    #nextBtn { right: 20px; }
 
     #galleryCaption {
-      color: white;
-      margin-top: 1.5rem;
-      font-size: 1.3rem;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      color: #fff;
+      text-align: center;
+      margin-top: 12px;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Your original header, main content, footer, and script remain unchanged -->
+<main>
+  <section class="search-section">
+    <h1>Search Records</h1>
 
-  <header class="nav">
-    <!-- ... your original nav/header code ... -->
-  </header>
-
-  <main>
-    <section class="search-section">
-      <h1>Search Records</h1>
-      <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Search by name or KC ID..." autocomplete="off">
-        <select id="ministrySelect">
-          <option value="campus">BLW Campus Ministry</option>
-          <option value="church">Christ Embassy Church Ministry</option>
-        </select>
-        <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
-      </div>
-
-      <div id="results" class="results-grid"></div>
-    </section>
-  </main>
-
-  <!-- Gallery Modal -->
-  <div id="galleryModal">
-    <div class="gallery-content">
-      <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
-      <img id="galleryImg" class="gallery-img" src="" alt="Gallery">
-      <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
-      <p id="galleryCaption"></p>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Search by name or KC ID">
+      <select id="ministrySelect">
+        <option value="campus">BLW Campus Ministry</option>
+        <option value="church">Christ Embassy Church Ministry</option>
+      </select>
+      <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
     </div>
+
+    <div id="results" class="results-grid"></div>
+  </section>
+</main>
+
+<!-- GALLERY -->
+<div id="galleryModal">
+  <div class="gallery-content">
+    <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
+    <img id="galleryImg" class="gallery-img">
+    <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
+    <p id="galleryCaption"></p>
   </div>
+</div>
 
-  <footer>
-    <!-- ... your original footer ... -->
-  </footer>
+<script>
+  const searchInput = document.getElementById('searchInput');
+  const ministrySelect = document.getElementById('ministrySelect');
+  const searchBtn = document.getElementById('searchBtn');
+  const resultsDiv = document.getElementById('results');
 
-  <!-- ──────────────────────────────────────────────── -->
-  <!-- YOUR ORIGINAL SCRIPT – UNTOUCHED -->
-  <!-- ──────────────────────────────────────────────── -->
-  <script>
-    // ... all your original JavaScript code remains exactly as you provided ...
-    // Including performSearch, displayResults, gallery functions, etc.
-    // I did NOT change or remove any line here.
-  </script>
+  searchBtn.onclick = performSearch;
+  searchInput.onkeypress = e => e.key === 'Enter' && performSearch();
+
+  async function performSearch() {
+    const q = searchInput.value.trim();
+    if (!q) return resultsDiv.innerHTML = '<p class="no-results">Enter a search term</p>';
+
+    resultsDiv.innerHTML = '<p class="loading">Searching…</p>';
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&ministry=${ministrySelect.value}`);
+    const data = await res.json();
+    data.length ? displayResults(data) : resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
+  }
+
+  function displayResults(people) {
+    resultsDiv.innerHTML = '';
+    people.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'person-card';
+
+      card.innerHTML = `
+        <div class="card-header">
+          <h2 class="person-name">${p.name}</h2>
+          <div class="profile-actions">
+            <button class="action-btn" onclick="shareProfile('${p.name}','${p.kc_id || ''}')"><i class="fab fa-whatsapp"></i></button>
+            <button class="action-btn" onclick="copyProfile('${p.name}','${p.kc_id || ''}')"><i class="fas fa-copy"></i></button>
+          </div>
+        </div>
+
+        <div class="person-info">
+          <p><strong>KC ID:</strong> ${p.kc_id || '—'}</p>
+          <p><strong>Designation:</strong> ${p.designation || '—'}</p>
+          <p><strong>Region:</strong> ${p.region || '—'}</p>
+          <p><strong>Group:</strong> ${p.group || '—'}</p>
+        </div>
+      `;
+
+      const photos = document.createElement('div');
+      photos.className = 'person-photos';
+
+      (p.all_photos || []).forEach((url,i)=>{
+        photos.innerHTML += `
+          <div class="photo-container">
+            <img src="${url}" onclick="openGallery(${JSON.stringify(p.all_photos)},${i},'${p.name}')">
+            <a href="${url}" download class="download-btn"><i class="fas fa-download"></i></a>
+          </div>`;
+      });
+
+      card.appendChild(photos);
+      resultsDiv.appendChild(card);
+    });
+  }
+
+  function shareProfile(name,kc){
+    const text = `ROR Partnership Record\nName: ${name}\nKC ID: ${kc}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+  }
+
+  function copyProfile(name,kc){
+    navigator.clipboard.writeText(`Name: ${name}\nKC ID: ${kc}`);
+    alert('Profile copied');
+  }
+
+  let currentPhotos=[],currentIndex=0,currentName='';
+  function openGallery(p,i,n){
+    currentPhotos=p;currentIndex=i;currentName=n;
+    document.getElementById('galleryImg').src=p[i];
+    document.getElementById('galleryCaption').textContent=`${n} (${i+1}/${p.length})`;
+    document.getElementById('galleryModal').style.display='flex';
+  }
+
+  document.getElementById('galleryModal').onclick=e=>{
+    if(e.target.id==='galleryModal')e.target.style.display='none';
+  };
+</script>
+
 </body>
 </html>
