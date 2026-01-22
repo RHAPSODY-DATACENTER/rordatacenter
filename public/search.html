@@ -11,6 +11,7 @@
 
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
@@ -101,7 +102,7 @@
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: start;
+      align-items: flex-start;
       gap: 12px;
     }
 
@@ -187,7 +188,9 @@
       background: rgba(0,0,0,0.9);
     }
 
-    .loading, .no-results, .error {
+    .loading,
+    .no-results,
+    .error {
       text-align: center;
       font-size: 1rem;
       padding: 40px 20px;
@@ -247,12 +250,21 @@
     <h1>Search Records</h1>
 
     <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Search by name or KC ID">
+      <input
+        type="search"
+        id="searchInput"
+        placeholder="Search by name or KC ID"
+        autocomplete="off"
+      >
+
       <select id="ministrySelect">
         <option value="campus">BLW Campus Ministry</option>
         <option value="church">Christ Embassy Church Ministry</option>
       </select>
-      <button id="searchBtn"><i class="fas fa-search"></i> Search</button>
+
+      <button id="searchBtn">
+        <i class="fas fa-search"></i> Search
+      </button>
     </div>
 
     <div id="results" class="results-grid"></div>
@@ -262,9 +274,13 @@
 <!-- GALLERY -->
 <div id="galleryModal">
   <div class="gallery-content">
-    <button id="prevBtn" class="gallery-nav"><i class="fas fa-chevron-left"></i></button>
+    <button id="prevBtn" class="gallery-nav">
+      <i class="fas fa-chevron-left"></i>
+    </button>
     <img id="galleryImg" class="gallery-img">
-    <button id="nextBtn" class="gallery-nav"><i class="fas fa-chevron-right"></i></button>
+    <button id="nextBtn" class="gallery-nav">
+      <i class="fas fa-chevron-right"></i>
+    </button>
     <p id="galleryCaption"></p>
   </div>
 </div>
@@ -275,21 +291,39 @@
   const searchBtn = document.getElementById('searchBtn');
   const resultsDiv = document.getElementById('results');
 
-  searchBtn.onclick = performSearch;
-  searchInput.onkeypress = e => e.key === 'Enter' && performSearch();
+  // Autofocus
+  window.addEventListener('load', () => searchInput.focus());
+
+  searchBtn.addEventListener('click', performSearch);
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      performSearch();
+    }
+  });
 
   async function performSearch() {
     const q = searchInput.value.trim();
-    if (!q) return resultsDiv.innerHTML = '<p class="no-results">Enter a search term</p>';
+    if (!q) {
+      resultsDiv.innerHTML = '<p class="no-results">Please enter a name or KC ID</p>';
+      return;
+    }
 
     resultsDiv.innerHTML = '<p class="loading">Searching…</p>';
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&ministry=${ministrySelect.value}`);
-    const data = await res.json();
-    data.length ? displayResults(data) : resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
+
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&ministry=${ministrySelect.value}`);
+      const data = await res.json();
+      data.length ? displayResults(data) : resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
+    } catch (e) {
+      resultsDiv.innerHTML = '<p class="error">Search failed</p>';
+    }
   }
 
   function displayResults(people) {
     resultsDiv.innerHTML = '';
+
     people.forEach(p => {
       const card = document.createElement('div');
       card.className = 'person-card';
@@ -298,8 +332,12 @@
         <div class="card-header">
           <h2 class="person-name">${p.name}</h2>
           <div class="profile-actions">
-            <button class="action-btn" onclick="shareProfile('${p.name}','${p.kc_id || ''}')"><i class="fab fa-whatsapp"></i></button>
-            <button class="action-btn" onclick="copyProfile('${p.name}','${p.kc_id || ''}')"><i class="fas fa-copy"></i></button>
+            <button class="action-btn" onclick="shareProfile('${p.name}','${p.kc_id || ''}')">
+              <i class="fab fa-whatsapp"></i>
+            </button>
+            <button class="action-btn" onclick="copyProfile('${p.name}','${p.kc_id || ''}')">
+              <i class="fas fa-copy"></i>
+            </button>
           </div>
         </div>
 
@@ -314,12 +352,15 @@
       const photos = document.createElement('div');
       photos.className = 'person-photos';
 
-      (p.all_photos || []).forEach((url,i)=>{
+      (p.all_photos || []).forEach((url, i) => {
         photos.innerHTML += `
           <div class="photo-container">
             <img src="${url}" onclick="openGallery(${JSON.stringify(p.all_photos)},${i},'${p.name}')">
-            <a href="${url}" download class="download-btn"><i class="fas fa-download"></i></a>
-          </div>`;
+            <a href="${url}" download class="download-btn">
+              <i class="fas fa-download"></i>
+            </a>
+          </div>
+        `;
       });
 
       card.appendChild(photos);
@@ -327,27 +368,33 @@
     });
   }
 
-  function shareProfile(name,kc){
+  function shareProfile(name, kc) {
     const text = `ROR Partnership Record\nName: ${name}\nKC ID: ${kc}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   }
 
-  function copyProfile(name,kc){
+  function copyProfile(name, kc) {
     navigator.clipboard.writeText(`Name: ${name}\nKC ID: ${kc}`);
     alert('Profile copied');
   }
 
-  let currentPhotos=[],currentIndex=0,currentName='';
-  function openGallery(p,i,n){
-    currentPhotos=p;currentIndex=i;currentName=n;
-    document.getElementById('galleryImg').src=p[i];
-    document.getElementById('galleryCaption').textContent=`${n} (${i+1}/${p.length})`;
-    document.getElementById('galleryModal').style.display='flex';
+  let currentPhotos = [], currentIndex = 0, currentName = '';
+
+  function openGallery(photos, index, name) {
+    currentPhotos = photos;
+    currentIndex = index;
+    currentName = name;
+    document.getElementById('galleryImg').src = photos[index];
+    document.getElementById('galleryCaption').textContent =
+      `${name} (${index + 1}/${photos.length})`;
+    document.getElementById('galleryModal').style.display = 'flex';
   }
 
-  document.getElementById('galleryModal').onclick=e=>{
-    if(e.target.id==='galleryModal')e.target.style.display='none';
-  };
+  document.getElementById('galleryModal').addEventListener('click', e => {
+    if (e.target.id === 'galleryModal') {
+      e.currentTarget.style.display = 'none';
+    }
+  });
 </script>
 
 </body>
