@@ -1,5 +1,5 @@
 // public/js/search.js
-// All your original JavaScript code, now safely wrapped in DOMContentLoaded
+// All your original JavaScript code, safely wrapped in DOMContentLoaded
 
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
