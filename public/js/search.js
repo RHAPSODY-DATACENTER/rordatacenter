@@ -1,166 +1,123 @@
-// public/js/search.js
-// All your original JavaScript code, safely wrapped in DOMContentLoaded
+// Mobile menu
+    document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+      document.querySelector('.nav-menu').classList.toggle('open');
+    });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = document.getElementById('searchInput');
-  const ministrySelect = document.getElementById('ministrySelect');
-  const searchBtn = document.getElementById('searchBtn');
-  const resultsDiv = document.getElementById('results');
+    // Ministry toggle
+    let currentMinistry = 'campus';
 
-  // Search triggers
-  searchBtn.addEventListener('click', performSearch);
-  searchInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') performSearch();
-  });
-
-  async function performSearch() {
-    const query = searchInput.value.trim();
-    const ministry = ministrySelect.value;
-
-    if (!query) {
-      resultsDiv.innerHTML = '<p class="no-results">Please enter a name or KC ID</p>';
-      return;
+    function setMinistry(ministry) {
+      currentMinistry = ministry;
+      document.getElementById('campus-btn').classList.toggle('btn-primary', ministry === 'campus');
+      document.getElementById('church-btn').classList.toggle('btn-primary', ministry === 'church');
     }
+ 
+    // Search
+    document.getElementById('search-btn-hero')?.addEventListener('click', performSearch);
+    document.getElementById('search-input-hero')?.addEventListener('keypress', e => {
+      if (e.key === 'Enter') performSearch();
+    });
 
-    resultsDiv.innerHTML = '<p class="loading">Searching...</p>';
+    function performSearch() {
+      const query = document.getElementById('search-input-hero').value.trim();
+      const resultsDiv = document.getElementById('search-results');
 
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${ministry}`);
-      const data = await res.json();
-
-      if (data.length === 0) {
-        resultsDiv.innerHTML = '<p class="no-results">No records found</p>';
+      if (!query) {
+        resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Please enter a search term</p>`;
         return;
       }
 
-      displayResults(data);
-    } catch (err) {
-      resultsDiv.innerHTML = '<p class="error">Error searching records</p>';
-      console.error(err);
-    }
-  }
+      resultsDiv.innerHTML = `<p style="text-align:center; padding:40px; color:#003366;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>`;
 
-  function displayResults(people) {
-    resultsDiv.innerHTML = '';
+      fetch(`/api/search?q=${encodeURIComponent(query)}&ministry=${currentMinistry}`)
+        .then(res => res.json())
+        .then(data => {
+          resultsDiv.innerHTML = '';
 
-    people.forEach(person => {
-      const personCard = document.createElement('div');
-      personCard.className = 'person-card';
+          if (data.length === 0) {
+            resultsDiv.innerHTML = `
+              <div style="text-align:center; padding:60px; color:#666;">
+                <i class="fas fa-search" style="font-size:48px; color:#ddd; margin-bottom:20px;"></i>
+                <p style="font-size:1.3rem;">No results found for "<strong>${query}</strong>" in ${currentMinistry === 'campus' ? 'BLW Campus' : 'Christ Embassy Church'} Ministry</p>
+              </div>`;
+            return;
+          }
 
-      personCard.innerHTML = `
-        <h2 class="person-name">${person.name}</h2>
-        <div class="person-info">
-          <p><strong>Designation:</strong> ${person.designation || '—'}</p>
-          <p><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
-          <p><strong>Region:</strong> ${person.region || '—'}</p>
-          <p><strong>Group:</strong> ${person.group || '—'}</p>
-          ${person.zone ? `<p><strong>Zone:</strong> ${person.zone}</p>` : ''}
-          ${person.chapter ? `<p><strong>Chapter:</strong> ${person.chapter}</p>` : ''}
-        </div>
-      `;
+          const grid = document.createElement('div');
+          grid.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+          `;
 
-      const photosDiv = document.createElement('div');
-      photosDiv.style.marginTop = '15px';
-      photosDiv.style.display = 'flex';
-      photosDiv.style.flexWrap = 'wrap';
-      photosDiv.style.gap = '12px';
+          data.forEach(person => {
+            const photoCount = person.all_photos.length;
+            grid.innerHTML += `
+              <div class="result-card" style="cursor:pointer;" onclick="openGallery(${JSON.stringify(person.all_photos)}, '${person.name.replace(/'/g, "\\'")}')">
+                <img src="${person.photo}" 
+                     onerror="this.src='/public/default-photo.jpg'"
+                     style="width:150px; height:150px; object-fit:cover; border-radius:50%; border:5px solid #003366; margin-bottom:15px;">
+                <h3 style="color:#003366; margin:10px 0;">${person.name}</h3>
+                <p style="margin:8px 0; color:#444;"><strong>Designation:</strong> ${person.designation || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>KC ID:</strong> ${person.kc_id || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Zone:</strong> ${person.zone || person.blw_zone || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Region:</strong> ${person.region || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Group:</strong> ${person.group || person.group_name || '—'}</p>
+                <p style="margin:8px 0; color:#444;"><strong>Chapter/Church:</strong> ${person.chapter || person.church || '—'}</p>
+                ${photoCount > 1 ? `<p style="margin-top:15px; color:#003366; font-weight:bold;">📸 Click to view all ${photoCount} photos</p>` : ''}
+              </div>
+            `;
+          });
 
-      if (person.all_photos && person.all_photos.length > 0) {
-        person.all_photos.forEach((photoUrl, index) => {
-          const wrapper = document.createElement('div');
-          wrapper.style.position = 'relative';
-          wrapper.style.display = 'inline-block';
-
-          const img = document.createElement('img');
-          img.src = photoUrl;
-          img.alt = `Photo ${index + 1} of ${person.name}`;
-          img.style.width = '160px';
-          img.style.height = '160px';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '8px';
-          img.style.cursor = 'pointer';
-          img.onclick = () => openGallery(person.all_photos, index, person.name);
-
-          const downloadLink = document.createElement('a');
-          downloadLink.href = photoUrl;
-          downloadLink.download = `${person.name.replace(/\s+/g, '_')}_photo_${index + 1}${photoUrl.match(/\.[^.]+$/)?.[0] || '.jpg'}`;
-          downloadLink.title = 'Download this photo';
-          downloadLink.style.position = 'absolute';
-          downloadLink.style.bottom = '8px';
-          downloadLink.style.right = '8px';
-          downloadLink.style.background = 'rgba(0,0,0,0.6)';
-          downloadLink.style.color = 'white';
-          downloadLink.style.width = '32px';
-          downloadLink.style.height = '32px';
-          downloadLink.style.borderRadius = '50%';
-          downloadLink.style.display = 'flex';
-          downloadLink.style.alignItems = 'center';
-          downloadLink.style.justifyContent = 'center';
-          downloadLink.style.textDecoration = 'none';
-          downloadLink.innerHTML = '<i class="fas fa-download"></i>';
-
-          wrapper.appendChild(img);
-          wrapper.appendChild(downloadLink);
-          photosDiv.appendChild(wrapper);
+          resultsDiv.appendChild(grid);
+        })
+        .catch(err => {
+          console.error(err);
+          resultsDiv.innerHTML = `<p style="text-align:center;color:#c00;">Error loading results. Please try again.</p>`;
         });
-      } else {
-        const noPhoto = document.createElement('p');
-        noPhoto.textContent = 'No photos available';
-        noPhoto.style.color = '#777';
-        noPhoto.style.fontStyle = 'italic';
-        photosDiv.appendChild(noPhoto);
-      }
+    }
 
-      personCard.appendChild(photosDiv);
-      resultsDiv.appendChild(personCard);
+    // Gallery
+    let currentPhotos = [];
+    let currentIndex = 0;
+    let currentName = '';
+
+    function openGallery(photos, name) {
+      if (!photos || photos.length === 0) return;
+      currentPhotos = photos;
+      currentIndex = 0;
+      currentName = name;
+      document.getElementById('galleryImg').src = photos[0];
+      document.getElementById('galleryCaption').textContent = `${name} (1 of ${photos.length})`;
+      document.getElementById('galleryModal').style.display = 'flex';
+    }
+
+    function closeGallery() {
+      document.getElementById('galleryModal').style.display = 'none';
+    }
+
+    function nextImage() {
+      currentIndex = (currentIndex + 1) % currentPhotos.length;
+      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
+      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
+    }
+
+    function prevImage() {
+      currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
+      document.getElementById('galleryImg').src = currentPhotos[currentIndex];
+      document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
+    }
+
+    document.getElementById('galleryModal').onclick = e => {
+      if (e.target.id === 'galleryModal') closeGallery();
+    };
+
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('galleryModal').style.display === 'none') return;
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === 'Escape') closeGallery();
     });
-  }
-
-  // Gallery functions
-  let currentPhotos = [];
-  let currentIndex = 0;
-  let currentName = '';
-
-  function openGallery(photos, index, name) {
-    currentPhotos = photos;
-    currentIndex = index;
-    currentName = name;
-
-    document.getElementById('galleryImg').src = photos[index];
-    document.getElementById('galleryCaption').textContent = `${name} (${index + 1} of ${photos.length})`;
-    document.getElementById('galleryModal').style.display = 'flex';
-  }
-
-  function closeGallery() {
-    document.getElementById('galleryModal').style.display = 'none';
-  }
-
-  function nextImage() {
-    currentIndex = (currentIndex + 1) % currentPhotos.length;
-    updateGalleryImage();
-  }
-
-  function prevImage() {
-    currentIndex = (currentIndex - 1 + currentPhotos.length) % currentPhotos.length;
-    updateGalleryImage();
-  }
-
-  function updateGalleryImage() {
-    document.getElementById('galleryImg').src = currentPhotos[currentIndex];
-    document.getElementById('galleryCaption').textContent = `${currentName} (${currentIndex + 1} of ${currentPhotos.length})`;
-  }
-
-  document.getElementById('galleryModal').onclick = e => {
-    if (e.target.id === 'galleryModal') closeGallery();
-  };
-
-  document.getElementById('prevBtn').onclick = prevImage;
-  document.getElementById('nextBtn').onclick = nextImage;
-
-  document.addEventListener('keydown', e => {
-    if (document.getElementById('galleryModal').style.display === 'none') return;
-    if (e.key === 'ArrowRight') nextImage();
-    if (e.key === 'ArrowLeft') prevImage();
-    if (e.key === 'Escape') closeGallery();
-  });
-});
