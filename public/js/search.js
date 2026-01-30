@@ -1,6 +1,22 @@
-// public/js/search.js
+// public/js/search.js - fixed with DOMContentLoaded wrapper
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Mobile menu
+  document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+    document.querySelector('.nav-menu').classList.toggle('open');
+  });
+
+  // Ministry toggle
+  let currentMinistry = 'campus';
+
+  function setMinistry(ministry) {
+    currentMinistry = ministry;
+    document.getElementById('campus-btn').classList.toggle('btn-primary', ministry === 'campus');
+    document.getElementById('church-btn').classList.toggle('btn-primary', ministry === 'church');
+  }
+
+  // ... your entire original code continues here unchanged ...
+
   const searchInput = document.getElementById('searchInput');
   const ministrySelect = document.getElementById('ministrySelect');
   const searchBtn = document.getElementById('searchBtn');
@@ -58,9 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      // ────────────────────────────────────────────────
-      // Show ALL photos with download button on each
-      // ────────────────────────────────────────────────
       const photosDiv = document.createElement('div');
       photosDiv.style.marginTop = '15px';
       photosDiv.style.display = 'flex';
@@ -118,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Gallery functions (original - untouched)
+  // Gallery functions (your original code)
   let currentPhotos = [];
   let currentIndex = 0;
   let currentName = '';
