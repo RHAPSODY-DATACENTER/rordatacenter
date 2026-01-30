@@ -1,15 +1,13 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ROR PARTNERSHIP DATAHUB - Search Data</title>
 
-  <!-- Font Icons & Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Your Public CSS -->
   <link rel="stylesheet" href="/public/css_file/styles.css">
 </head>
 
@@ -29,22 +27,20 @@
 
   <main id="app" class="container">
 
-    <!-- SEARCH DATA VIEW -->
     <section id="search-data-view" class="view active">
       <section class="dashboard-section search-dashboard">
         <div class="search-inner">
-          <!-- Ministry Toggle -->
           <div style="text-align:center; margin-bottom:30px;">
             <button id="campus-btn" class="btn btn-primary" onclick="setMinistry('campus')">BLW Campus Ministry</button>
-            <button id="church-btn" class="btn" onclick="setMinistry('church')">Christ Embassy Church Ministry</button>
+            <button id="church-btn" class="btn btn-primary" onclick="setMinistry('church')">Christ Embassy Church Ministry</button>
           </div>
 
           <div class="search-box">
-            <input 
-              id="search-input-hero" 
-              type="text" 
-              class="search-input-large" 
-              placeholder="Enter name, designation, zone, region, chapter, group or KC ID..." 
+            <input
+              id="search-input-hero"
+              type="text"
+              class="search-input-large"
+              placeholder="Enter name, designation, zone, region, chapter, group or KC ID..."
               autocomplete="off"
             >
             <button id="search-btn-hero" class="btn btn-primary search-btn">
@@ -57,7 +53,6 @@
         </div>
       </section>
 
-      <!-- SEARCH RESULTS WILL APPEAR HERE -->
       <div id="search-results" style="min-height:200px;"></div>
     </section>
 
@@ -86,7 +81,6 @@
     </div>
   </footer>
 
-  <!-- FULL-SCREEN GALLERY MODAL -->
   <div id="galleryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
     <span style="position:absolute; top:20px; right:40px; color:white; font-size:50px; font-weight:bold; cursor:pointer;" onclick="closeGallery()">&times;</span>
     <div style="position:absolute; top:50%; left:30px; transform:translateY(-50%); color:white; font-size:60px; cursor:pointer; opacity:0.7;" onclick="prevImage()">&#10094;</div>
