@@ -71,9 +71,7 @@ function displayResults(people) {
       </div>
     `;
 
-    // ────────────────────────────────────────────────
     // Show ALL photos with download button on each
-    // ────────────────────────────────────────────────
     const photosDiv = document.createElement('div');
     photosDiv.style.marginTop = '15px';
     photosDiv.style.display = 'flex';
