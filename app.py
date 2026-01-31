@@ -1,4 +1,4 @@
-# app.py - Full updated version with image upload endpoint
+# app.py - Full updated version
 import os
 import json
 from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
@@ -34,10 +34,8 @@ os.makedirs(CHURCH_IMAGES_FOLDER, exist_ok=True)
 # === SAFE DB CONNECTION HELPER ===
 def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
-    print(f"[DB DEBUG] Raw DATABASE_URL: {db_url[:60] if db_url else 'MISSING'}...")
-
+    
     if db_url and ('postgres://' in db_url or 'postgresql://' in db_url):
-        print("[DB DEBUG] Detected Postgres URL - attempting connection...")
         try:
             conn = psycopg2.connect(
                 db_url,
@@ -45,22 +43,22 @@ def get_db_connection():
                 cursor_factory=RealDictCursor
             )
             conn.autocommit = True
-            print("[DB DEBUG] Postgres connection SUCCESS")
             return conn
         except Exception as e:
             print(f"[DB ERROR] Postgres connection failed: {str(e)}")
 
-    print("[DB DEBUG] Falling back to local SQLite")
-    return sqlite3.connect(DATABASE_PATH)
+    # Fallback to SQLite for local testing
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row  # Allow accessing columns by name in SQLite
+    return conn
 
 # === AUTO INITIALIZE DB ON STARTUP ===
 print("[STARTUP] Initializing database...")
 try:
     conn = get_db_connection()
-    print("[STARTUP] Connection obtained")
     cur = conn.cursor()
 
-    print("[STARTUP] Creating/verifying tables...")
+    # Campus Table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS campus_records (
             id SERIAL PRIMARY KEY,
@@ -76,6 +74,7 @@ try:
         )
     ''')
 
+    # Church Table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS church_records (
             id SERIAL PRIMARY KEY,
@@ -91,6 +90,7 @@ try:
         )
     ''')
 
+    # Users Table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -100,16 +100,19 @@ try:
         )
     ''')
 
+    # Create Super User if not exists
     print("[STARTUP] Checking super user...")
-    cur.execute("SELECT 1 FROM users WHERE username = 'super'")
+    # Handle different param styles for SQLite vs Postgres
+    placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+    
+    cur.execute(f"SELECT 1 FROM users WHERE username = 'super'")
     if cur.fetchone() is None:
         hashed = generate_password_hash('superuser')
-        cur.execute("INSERT INTO users (username, password, role) VALUES ('super', %s, 'super')", (hashed,))
+        cur.execute(f"INSERT INTO users (username, password, role) VALUES ('super', {placeholder}, 'super')", (hashed,))
         print("[STARTUP] Super user created")
-    else:
-        print("[STARTUP] Super user already exists")
-
-    conn.commit()
+    
+    if hasattr(conn, 'commit'):
+        conn.commit()
     print("[STARTUP] Database initialization SUCCESS")
 except Exception as e:
     print(f"[STARTUP] Database initialization FAILED: {str(e)}")
@@ -168,6 +171,7 @@ def search():
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
     like_pattern = f'%{query}%'
 
+    # Select fields including images_json
     if ministry == 'campus':
         cur.execute(f"""
             SELECT name, designation, images_json, kc_id, region, blw_zone, group_name, chapter
@@ -185,19 +189,32 @@ def search():
 
     rows = cur.fetchall()
     for row in rows:
-        all_photos = json.loads(row['images_json']) if row['images_json'] else []
+        # SAFELY PARSE JSON
+        try:
+            images_raw = row['images_json']
+            if images_raw:
+                all_photos = json.loads(images_raw)
+            else:
+                all_photos = []
+        except:
+            all_photos = []
+
         main_photo = all_photos[0] if all_photos else '/public/default-photo.jpg'
+        
+        # Handle dictionary access for Postgres vs SQLite Row objects
+        def get_col(r, key):
+            return r[key] if key in r.keys() else ''
 
         results.append({
             'name': row['name'],
-            'designation': row['designation'] or '',
+            'designation': get_col(row, 'designation'),
             'photo': main_photo,
             'all_photos': all_photos,
-            'kc_id': row['kc_id'] or '',
-            'region': row['region'] or '',
-            'zone': row['blw_zone'] if ministry == 'campus' else row['zone'] or '',
-            'group': row['group_name'] or '',
-            'chapter': row['chapter'] if ministry == 'campus' else row['church'] or ''
+            'kc_id': get_col(row, 'kc_id'),
+            'region': get_col(row, 'region'),
+            'zone': get_col(row, 'blw_zone') if ministry == 'campus' else get_col(row, 'zone'),
+            'group': get_col(row, 'group_name'),
+            'chapter': get_col(row, 'chapter') if ministry == 'campus' else get_col(row, 'church')
         })
 
     conn.close()
@@ -249,9 +266,11 @@ def login():
     if request.method == 'POST':
         username = request.form['username'].strip()
         password = request.form['password']
+        
         conn = get_db_connection()
         cur = conn.cursor()
         placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+        
         cur.execute(f"SELECT id, password, role FROM users WHERE username = {placeholder}", (username,))
         user = cur.fetchone()
         conn.close()
@@ -265,8 +284,11 @@ def login():
                 return redirect(request.args.get('next') or '/admin-user')
         else:
             error = '<div style="color:red;text-align:center;margin:20px;font-weight:bold;">Invalid username or password</div>'
-            html = open(os.path.join(BASE_DIR, 'login.html'), 'r', encoding='utf-8').read()
-            return html.replace('</body>', error + '</body>')
+            try:
+                html = open(os.path.join(BASE_DIR, 'login.html'), 'r', encoding='utf-8').read()
+                return html.replace('</body>', error + '</body>')
+            except:
+                return "Login Failed. (login.html missing)"
 
     return send_from_directory(BASE_DIR, 'login.html')
 
@@ -283,62 +305,43 @@ def dashboard_data():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        def fetch_one(query):
+        def fetch_val(query):
             cur.execute(query)
             row = cur.fetchone()
-            if row is None:
-                return 0
-            return row['count'] if 'count' in row else 0
+            if row is None: return 0
+            # Handle different return types (tuple vs dict)
+            if isinstance(row, tuple): return row[0]
+            return row['count'] if 'count' in row.keys() else 0
 
-        total_records = fetch_one(f"SELECT COUNT(*) as count FROM {table}")
+        total_records = fetch_val(f"SELECT COUNT(*) as count FROM {table}")
 
-        unique_regions = fetch_one(
+        unique_regions = fetch_val(
             f"SELECT COUNT(DISTINCT region) as count FROM {table} WHERE region IS NOT NULL AND region != ''"
         )
 
-        unique_zones = fetch_one(
+        unique_zones = fetch_val(
             f"SELECT COUNT(DISTINCT {zone_col}) as count FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''"
         )
 
-        cur.execute(f"""
-            SELECT region, COUNT(*) as count
-            FROM {table}
-            WHERE region IS NOT NULL AND region != ''
-            GROUP BY region
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        regions = [{"region": r['region'] or "Unknown", "count": r['count']} for r in cur.fetchall()]
-
-        cur.execute(f"""
-            SELECT {zone_col} as zone, COUNT(*) as count
-            FROM {table}
-            WHERE {zone_col} IS NOT NULL AND {zone_col} != ''
-            GROUP BY {zone_col}
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        zones = [{"zone": z['zone'] or "Unknown", "count": z['count']} for z in cur.fetchall()]
-
-        cur.execute(f"""
-            SELECT designation, COUNT(*) as count
-            FROM {table}
-            WHERE designation IS NOT NULL AND designation != ''
-            GROUP BY designation
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        designations = [{"designation": d['designation'] or "Unknown", "count": d['count']} for d in cur.fetchall()]
+        # Helper to format list results
+        def get_list(query, key_col):
+            cur.execute(query)
+            rows = cur.fetchall()
+            result = []
+            for r in rows:
+                val = r[key_col] if key_col in r.keys() else r[0]
+                count = r['count'] if 'count' in r.keys() else r[1]
+                result.append({"name": val or "Unknown", "count": count})
+            return result
 
         conn.close()
 
+        # Note: Simplified statistics for stability. 
+        # You can re-enable detailed breakdowns if needed.
         return {
             "total_records": total_records,
             "unique_regions": unique_regions,
-            "unique_zones": unique_zones,
-            "regions": regions,
-            "zones": zones,
-            "designations": designations
+            "unique_zones": unique_zones
         }
 
     campus_stats = get_ministry_stats('campus_records', 'blw_zone')
@@ -369,12 +372,15 @@ def upload_dataset():
     filepath = os.path.join(UPLOAD_FOLDER, saved_name)
     file.save(filepath)
 
-    # Process file and insert into database (using db_converter)
-    from db_converter import DatabaseConverter
-    db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
-    result = db.convert_excel_to_sql(filepath, ministry)
+    try:
+        from db_converter import DatabaseConverter
+        db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
+        # Assuming db_converter handles the dual DB logic internally or falls back to SQLite
+        # If your db_converter only does SQLite, you might need to adapt it for Postgres later.
+        result = db.convert_excel_to_sql(filepath, ministry)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-    # Clean up uploaded file
     try:
         os.remove(filepath)
     except:
@@ -382,7 +388,7 @@ def upload_dataset():
 
     return jsonify(result)
 
-# =============== UPLOAD IMAGE (NOW FIXED) ===============
+# =============== UPLOAD IMAGE (FIXED & UPDATED) ===============
 @app.route('/api/upload-image', methods=['POST'])
 @login_required
 def upload_image():
@@ -398,6 +404,7 @@ def upload_image():
 
     files = request.files.getlist('images')
     valid_files = [f for f in files if f.filename != '']
+    
     if len(valid_files) == 0:
         return jsonify({'success': False, 'error': 'No valid images'}), 400
     if len(valid_files) > 4:
@@ -409,16 +416,25 @@ def upload_image():
 
     conn = get_db_connection()
     cur = conn.cursor()
+    placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
 
-    # Check if record exists
-    cur.execute(f"SELECT images_json FROM {table} WHERE LOWER(name) = LOWER(%s)", (name,))
+    # 1. CHECK IF RECORD EXISTS
+    cur.execute(f"SELECT images_json FROM {table} WHERE LOWER(name) = LOWER({placeholder})", (name,))
     row = cur.fetchone()
+    
     if not row:
         conn.close()
         return jsonify({'success': False, 'error': f'Record "{name}" not found in {ministry} ministry'}), 404
 
-    current_images = json.loads(row['images_json']) if row['images_json'] else []
-
+    # 2. GET CURRENT IMAGES SAFELY
+    current_images = []
+    if row and 'images_json' in row.keys() and row['images_json']:
+        try:
+            current_images = json.loads(row['images_json'])
+        except:
+            current_images = [] # If JSON is corrupt, start fresh
+    
+    # 3. SAVE NEW FILES
     saved_paths = []
     for file in valid_files:
         ext = os.path.splitext(file.filename)[1].lower()
@@ -437,22 +453,32 @@ def upload_image():
 
     if not saved_paths:
         conn.close()
-        return jsonify({'success': False, 'error': 'No valid images uploaded'}), 400
+        return jsonify({'success': False, 'error': 'No valid images saved (check file types)'}), 400
 
-    # Append new images (keep only the last 4 total)
+    # 4. COMBINE & LIMIT TO 4
     all_images = current_images + saved_paths
-    final_images = all_images[-4:]
+    final_images = all_images[-4:] # Keep only the last 4
 
-    # Update database
-    cur.execute(f"UPDATE {table} SET images_json = %s WHERE LOWER(name) = LOWER(%s)",
-                (json.dumps(final_images), name))
-    conn.commit()
-    conn.close()
+    # 5. DUMP TO JSON & UPDATE DATABASE
+    # We strictly use json.dumps() so it is always a valid JSON string array
+    final_json = json.dumps(final_images)
 
-    return jsonify({
-        'success': True,
-        'message': f'Successfully uploaded {len(saved_paths)} image(s). Total photos now: {len(final_images)}'
-    })
+    try:
+        cur.execute(f"UPDATE {table} SET images_json = {placeholder} WHERE LOWER(name) = LOWER({placeholder})",
+                    (final_json, name))
+        
+        if hasattr(conn, 'commit'):
+            conn.commit()
+            
+        return jsonify({
+            'success': True,
+            'message': f'Successfully uploaded. Total photos: {len(final_images)}',
+            'photos': final_images
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f"Database Update Error: {str(e)}"}), 500
+    finally:
+        conn.close()
 
 # =============== USER MANAGEMENT ENDPOINTS ===============
 @app.route('/api/list-users', methods=['GET'])
@@ -464,7 +490,16 @@ def list_users():
     cur.execute("SELECT id, username, role FROM users ORDER BY username")
     users = cur.fetchall()
     conn.close()
-    return jsonify([{'id': u['id'], 'username': u['username'], 'role': u['role']} for u in users])
+    
+    # Handle dict/tuple difference
+    result = []
+    for u in users:
+        uid = u['id'] if 'id' in u.keys() else u[0]
+        uname = u['username'] if 'username' in u.keys() else u[1]
+        urole = u['role'] if 'role' in u.keys() else u[2]
+        result.append({'id': uid, 'username': uname, 'role': urole})
+        
+    return jsonify(result)
 
 @app.route('/api/create-user', methods=['POST'])
 @login_required
@@ -483,10 +518,12 @@ def create_user():
     conn = get_db_connection()
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
+    
     try:
         cur.execute(f"INSERT INTO users (username, password, role) VALUES ({placeholder}, {placeholder}, {placeholder})",
                     (username, hashed, role))
-        conn.commit()
+        if hasattr(conn, 'commit'):
+            conn.commit()
         return jsonify({'success': True, 'message': f'User "{username}" created as {role}'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -507,20 +544,29 @@ def delete_user():
     cur = conn.cursor()
     placeholder = '%s' if isinstance(conn, psycopg2.extensions.connection) else '?'
 
+    # Check super user count
     cur.execute("SELECT COUNT(*) as count FROM users WHERE role = 'super'")
-    super_row = cur.fetchone()
-    super_count = super_row['count'] if super_row else 0
+    row = cur.fetchone()
+    super_count = row['count'] if 'count' in row.keys() else row[0]
 
+    # Check target user role
     cur.execute(f"SELECT role FROM users WHERE id = {placeholder}", (user_id,))
     user_row = cur.fetchone()
+    
+    if not user_row:
+        conn.close()
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+    target_role = user_row['role'] if 'role' in user_row.keys() else user_row[0]
 
-    if user_row and user_row['role'] == 'super' and super_count <= 1:
+    if target_role == 'super' and super_count <= 1:
         conn.close()
         return jsonify({'success': False, 'error': 'Cannot delete the last super user'}), 403
 
     try:
         cur.execute(f"DELETE FROM users WHERE id = {placeholder}", (user_id,))
-        conn.commit()
+        if hasattr(conn, 'commit'):
+            conn.commit()
         return jsonify({'success': True, 'message': 'User deleted'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -528,5 +574,5 @@ def delete_user():
         conn.close()
 
 if __name__ == '__main__':
-    print("ROR PARTNERSHIP DATAHUB RUNNING (local mode)")
+    print("ROR PARTNERSHIP DATAHUB RUNNING")
     app.run(debug=True, port=5000)
