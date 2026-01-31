@@ -297,7 +297,7 @@ def logout():
     session.clear()
     return redirect('/login')
 
-# =============== DASHBOARD DATA ===============
+# =============== DASHBOARD DATA (UPDATED FOR VISUALIZATION) ===============
 @app.route('/api/dashboard-data')
 @login_required
 def dashboard_data():
@@ -305,16 +305,16 @@ def dashboard_data():
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # 1. Basic Counts
         def fetch_val(query):
             cur.execute(query)
             row = cur.fetchone()
             if row is None: return 0
-            # Handle different return types (tuple vs dict)
             if isinstance(row, tuple): return row[0]
             return row['count'] if 'count' in row.keys() else 0
 
         total_records = fetch_val(f"SELECT COUNT(*) as count FROM {table}")
-
+        
         unique_regions = fetch_val(
             f"SELECT COUNT(DISTINCT region) as count FROM {table} WHERE region IS NOT NULL AND region != ''"
         )
@@ -323,27 +323,51 @@ def dashboard_data():
             f"SELECT COUNT(DISTINCT {zone_col}) as count FROM {table} WHERE {zone_col} IS NOT NULL AND {zone_col} != ''"
         )
 
-        # Helper to format list results
-        def get_list(query, key_col):
+        # 2. Detailed Lists for Charts
+        def get_list(query, label_key):
             cur.execute(query)
             rows = cur.fetchall()
             result = []
             for r in rows:
-                val = r[key_col] if key_col in r.keys() else r[0]
-                count = r['count'] if 'count' in r.keys() else r[1]
-                result.append({"name": val or "Unknown", "count": count})
+                # Handle Tuple (SQLite) vs RealDictRow (Postgres)
+                # Query structure is always SELECT name, count
+                val = r[0] if isinstance(r, tuple) else (r[label_key] if label_key in r.keys() else list(r.values())[0])
+                count = r[1] if isinstance(r, tuple) else (r['count'] if 'count' in r.keys() else list(r.values())[1])
+                
+                clean_val = val if val and str(val).strip() != '' else "Unknown"
+                result.append({label_key: clean_val, "count": count})
             return result
+
+        # Regions List
+        regions_list = get_list(
+            f"SELECT region, COUNT(*) as count FROM {table} GROUP BY region ORDER BY count DESC", 
+            "region"
+        )
+
+        # Zones List
+        zones_list = get_list(
+            f"SELECT {zone_col} as zone, COUNT(*) as count FROM {table} GROUP BY {zone_col} ORDER BY count DESC",
+            "zone"
+        )
+
+        # Designations List
+        designations_list = get_list(
+            f"SELECT designation, COUNT(*) as count FROM {table} GROUP BY designation ORDER BY count DESC",
+            "designation"
+        )
 
         conn.close()
 
-        # Note: Simplified statistics for stability. 
-        # You can re-enable detailed breakdowns if needed.
         return {
             "total_records": total_records,
             "unique_regions": unique_regions,
-            "unique_zones": unique_zones
+            "unique_zones": unique_zones,
+            "regions": regions_list,
+            "zones": zones_list,
+            "designations": designations_list
         }
 
+    # Fetch for both ministries
     campus_stats = get_ministry_stats('campus_records', 'blw_zone')
     church_stats = get_ministry_stats('church_records', 'zone')
 
@@ -376,7 +400,6 @@ def upload_dataset():
         from db_converter import DatabaseConverter
         db = DatabaseConverter(DATABASE_PATH, UPLOAD_FOLDER)
         # Assuming db_converter handles the dual DB logic internally or falls back to SQLite
-        # If your db_converter only does SQLite, you might need to adapt it for Postgres later.
         result = db.convert_excel_to_sql(filepath, ministry)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -460,7 +483,6 @@ def upload_image():
     final_images = all_images[-4:] # Keep only the last 4
 
     # 5. DUMP TO JSON & UPDATE DATABASE
-    # We strictly use json.dumps() so it is always a valid JSON string array
     final_json = json.dumps(final_images)
 
     try:

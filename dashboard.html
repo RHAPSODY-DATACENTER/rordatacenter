@@ -65,7 +65,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
       display: none; 
       min-width: 180px; 
-      z-index: 1; 
+      z-index: 10; 
     }
     .settings-menu a { 
       display: block; 
@@ -152,15 +152,19 @@
 
     .chart-container { 
       position: relative; 
-      height: 420px; 
-      margin-bottom: 50px; 
+      height: 500px; 
+      margin-bottom: 20px; 
       background: white; 
       border-radius: 15px; 
       padding: 20px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+    }
+    
+    /* Make canvas responsive within container */
+    canvas {
+        max-width: 100%;
+        max-height: 100%;
     }
 
-    /* Quick Upload Buttons */
     .admin-tools { 
       text-align: center; 
       margin: 60px 0; 
@@ -258,7 +262,6 @@
     </div>
   </div>
 
-  <!-- Quick Upload Buttons -->
   <div class="admin-tools">
     <h2>Quick Admin Actions</h2>
     <div class="upload-btns">
@@ -274,8 +277,15 @@
   let currentData = { campus: {}, church: {} };
   let charts = { region: null, zone: null, designation: null };
 
+  // Common colors for charts
+  const chartColors = [
+    '#003366', '#ff6200', '#0066cc', '#33cc33', '#cc0000', 
+    '#9933cc', '#ffcc00', '#00cccc', '#ff6699', '#666666'
+  ];
+
   function setMinistry(ministry) {
     currentMinistry = ministry;
+    // Update buttons
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[onclick="setMinistry('${ministry}')"]`).classList.add('active');
     updateDashboard();
@@ -295,65 +305,69 @@
     const data = currentData[currentMinistry];
     if (!data) return;
 
+    // 1. Text Stats
     document.getElementById('ministry-title').textContent = 
       `${currentMinistry === 'campus' ? 'BLW Campus Ministry' : 'Christ Embassy Church Ministry'} Overview`;
-
     document.getElementById('total').textContent = data.total_records || 0;
     document.getElementById('regions').textContent = data.unique_regions || 0;
     document.getElementById('zones').textContent = data.unique_zones || 0;
 
-    // Destroy existing charts
+    // 2. Destroy old charts
     if (charts.region) charts.region.destroy();
     if (charts.zone) charts.zone.destroy();
     if (charts.designation) charts.designation.destroy();
 
-    // Region Chart
-    charts.region = new Chart(document.getElementById('regionChart'), {
-      type: 'doughnut',
-      data: {
-        labels: data.regions.map(item => item.region || 'Unknown'),
-        datasets: [{
-          label: 'Regions',
-          data: data.regions.map(item => item.count),
-          backgroundColor: ['#003366', '#0066cc', '#3399ff', '#66ccff', '#99ddff', '#ccffff']
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
+    // 3. Helper to create chart configs safely
+    const createChart = (canvasId, type, labels, counts, labelName) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelName,
+                    data: counts,
+                    backgroundColor: chartColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', display: type === 'doughnut' } // Hide legend for bar charts
+                }
+            }
+        });
+    };
 
-    // Zone Chart
-    charts.zone = new Chart(document.getElementById('zoneChart'), {
-      type: 'doughnut',
-      data: {
-        labels: data.zones.map(item => item.zone || 'Unknown'),
-        datasets: [{
-          label: 'Zones',
-          data: data.zones.map(item => item.count),
-          backgroundColor: ['#003366', '#0066cc', '#3399ff', '#66ccff', '#99ddff', '#ccffff']
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
+    // 4. Render Charts (Data Safe Check)
+    const regions = data.regions || [];
+    charts.region = createChart(
+        'regionChart', 
+        'doughnut', 
+        regions.map(r => r.region), 
+        regions.map(r => r.count), 
+        'Regions'
+    );
 
-    // Designation Chart
-    charts.designation = new Chart(document.getElementById('designationChart'), {
-      type: 'bar',
-      data: {
-        labels: data.designations.map(item => item.designation || 'Unknown'),
-        datasets: [{
-          label: 'Count',
-          data: data.designations.map(item => item.count),
-          backgroundColor: '#0066cc',
-          borderRadius: 8
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
-      }
-    });
+    const zones = data.zones || [];
+    charts.zone = createChart(
+        'zoneChart', 
+        'doughnut', 
+        zones.map(z => z.zone), 
+        zones.map(z => z.count), 
+        'Zones'
+    );
+
+    const designations = data.designations || [];
+    charts.designation = createChart(
+        'designationChart', 
+        'bar', 
+        designations.map(d => d.designation), 
+        designations.map(d => d.count), 
+        'Designations'
+    );
   }
 
   window.onload = loadDashboard;
