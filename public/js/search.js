@@ -69,7 +69,7 @@
                 </div>
 
                 <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="btn btn-primary" style="padding:8px 12px; font-size:0.85rem;" onclick="openGallery(${photoArrayJson}, '${escapedName}')">
+                    <button class="btn btn-primary" style="background:ff6b35; color:white; border:none; padding:8px 12px; font-size:0.85rem;" onclick="openGallery(${photoArrayJson}, '${escapedName}')">
                         <i class="fas fa-images"></i> View Photos
                     </button>
                     <button class="btn" style="background:#ff6b35; color:white; border:none; padding:8px 12px; font-size:0.85rem;" onclick="copyToClipboard(this, '${escapedName}', '${person.kc_id}', '${person.zone}')">
